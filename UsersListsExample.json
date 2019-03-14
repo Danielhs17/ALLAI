@@ -1,0 +1,32 @@
+{
+	"chatId1": {
+		"listName1": {
+			"numberOfElements": 3,
+			"elem0": "value1",
+			"elem1": "value2",
+			"elem2": "value3"
+		},
+
+		"listName2": {
+			"numberOfElements": 2,
+			"elem0": "value1",
+			"elem1": "value2"
+		}
+	},
+
+	"chatId2": {
+		"listName1": {
+			"numberOfElements": 2,
+			"elem0": "value1",
+			"elem1": "value2"
+		},
+
+		"listName2": {
+			"numberOfElements": 4,
+			"elem0": "value1",
+			"elem1": "value2",
+			"elem2": "value3",
+			"elem3": "value4"
+		}
+	}
+}
