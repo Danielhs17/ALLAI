@@ -1,6 +1,7 @@
 package allai.interfaces.audio;
 
 import allai.interfaces.keys.KEYS;
+import static allai.utils.ALLAILogger.logError;
 import allai.utils.HTTPUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -41,7 +42,7 @@ public class WitAiTranscriptor {
                 this.transcription = (JSONObject) p.parse(res);
             return res;
         } catch (ParseException ex) {
-            ex.printStackTrace();
+            logError("WitAiTranscriptor: Error while parsing JSON Object" + ex.getMessage());
             return "";
         }
     }

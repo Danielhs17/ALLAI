@@ -5,6 +5,7 @@
  */
 package allai.main.services;
 
+import static allai.utils.ALLAILogger.logError;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -307,7 +308,7 @@ public class ListService extends Service {
             }
             reader.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logError("ListService: An error occured while reading the users lists file: " + e.getMessage());
         }
         JSONParser parser = new JSONParser();
         JSONObject object = null;
@@ -315,7 +316,7 @@ public class ListService extends Service {
             object = (JSONObject) parser.parse(content);
         } catch (ParseException ex) {
             object = new JSONObject();
-            //Logger.getLogger(ListService.class.getName()).logInfo(Level.SEVERE, null, ex);
+            logError("ListService: An error occured while parsing the users lists file: " + ex.getMessage());
         }
         return object;
     }
@@ -326,7 +327,7 @@ public class ListService extends Service {
             out = new PrintWriter(UsersListsFile);
             out.println(users.toJSONString());
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(ListService.class.getName()).log(Level.SEVERE, null, ex);
+            logError("ListService: UsersList file not found: " + ex.getMessage());
         } finally {
             out.close();
         }
@@ -338,7 +339,7 @@ public class ListService extends Service {
             try {
                 file.createNewFile();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                logError("ListService: Could not create UsersLists file: " + ex.getMessage());
             }
         }
     }

@@ -6,6 +6,7 @@
 package allai.main.services;
 
 //import com.google.inject.spi.Elements;
+import static allai.utils.ALLAILogger.logError;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -15,9 +16,8 @@ import org.jsoup.select.Elements;
 import static allai.utils.ALLAILogger.logInfo;
 
 /**
- * @author Daniel Alejandro Hurtado Simoes
- * Universidad de Málaga
- * TFG - Grado en Ingeniería Telemática
+ * @author Daniel Alejandro Hurtado Simoes Universidad de Málaga TFG - Grado en
+ * Ingeniería Telemática
  */
 public class GoogleSearchService extends Service {
 
@@ -74,12 +74,13 @@ public class GoogleSearchService extends Service {
         switch (service) {
             case SEARCH:
                 try {
-                result = search();
-                response = "Esto es lo que he encontrado: \n\n";
-                for (int x = 0; x < numberOfResults; x++) {
-                    response += "- " + result[x][0] + "\n" + result[x][1] + "\n\n";
-                }
-                } catch (IOException e){
+                    result = search();
+                    response = "Esto es lo que he encontrado: \n\n";
+                    for (int x = 0; x < numberOfResults; x++) {
+                        response += "- " + result[x][0] + "\n" + result[x][1] + "\n\n";
+                    }
+                } catch (IOException e) {
+                    logError("GoogleSearchService: An error occured when trying to search: " + e.getMessage());
                     response = error;
                 }
                 break;
@@ -89,5 +90,4 @@ public class GoogleSearchService extends Service {
         return response;
     }
 
-    
 }

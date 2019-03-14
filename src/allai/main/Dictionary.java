@@ -6,6 +6,7 @@
 package allai.main;
 
 import allai.main.utils.WordContextInfo;
+import static allai.utils.ALLAILogger.logError;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -47,7 +48,7 @@ public class Dictionary {
                 map.put(word, result);
             }
         } catch (Exception e) {
-            logInfo("Exception at addOrUpdateParameter. Word: " + word + " ." + e.getLocalizedMessage());
+            logError("Dictionary: Exception at addOrUpdateParameter. Word: " + word + " ." + e.getMessage());
         }
     }
 
@@ -296,7 +297,7 @@ public class Dictionary {
                 responseMap.put(question, response);
             }
         } catch (Exception e) {
-            logInfo("Dictioary: Exception at addOrUpdateParameter. Word received: " + response + ". " + e.getLocalizedMessage());
+            logError("Dictionary: Exception at addOrUpdateParameter. Word received: " + response + ". " + e.getMessage());
         }
         if (!keepDBOpen) {
             responsesDB.commit();

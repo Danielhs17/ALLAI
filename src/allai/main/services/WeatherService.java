@@ -109,7 +109,7 @@ public class WeatherService extends Service {
                     + "Cielo: " + clouds;
 
         } catch (Exception ex) {
-            logError("WeatherService: An error occurred while trying to retrieve the weather: " + ex.getLocalizedMessage());
+            logError("WeatherService: An error occurred while trying to retrieve the weather: " + ex.getMessage());
             response = "No he podido obtener información del clima ahora mismo, ¡creo que se ha roto mi termómetro! ¡Lo siento!";
         }
         return response;

@@ -49,7 +49,7 @@ public class TelegramAudioTranscriptor {
             try {
                 transcribedText = transcript(voice);
             } catch (IOException e) {
-                logError("TelegramAudioTranscriptor: Exception while transcripting: " + e.getLocalizedMessage());
+                logError("TelegramAudioTranscriptor: Exception while transcripting: " + e.getMessage());
             }
         }
     }
@@ -65,10 +65,10 @@ public class TelegramAudioTranscriptor {
             fileToGet = new URL("https://api.telegram.org/file/bot" + KEYS.telegramBotToken + "/" + filePath.get("file_path"));
             rbc = Channels.newChannel(fileToGet.openStream());
         } catch (MalformedURLException e) {
-            logError("TelegramAudioTranscriptor: MalformedURLException when trying to download telegram audio" + e.getLocalizedMessage());
+            logError("TelegramAudioTranscriptor: MalformedURLException when trying to download telegram audio" + e.getMessage());
             return false;
         } catch (IOException e) {
-            logError("TelegramAudioTranscriptor: IOException at downloadAndConvert: " + e.getLocalizedMessage());
+            logError("TelegramAudioTranscriptor: IOException at downloadAndConvert: " + e.getMessage());
             return false;
         }
         FileOutputStream fos;
@@ -77,7 +77,7 @@ public class TelegramAudioTranscriptor {
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
             fos.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logError("TelegramAudioTranscriptor: Error occured while writing saving .oga file: " + e.getMessage());
         }
         try {
             logInfo("TelegramAudioTranscriptor: Converting audio with opusdec..");
@@ -86,9 +86,10 @@ public class TelegramAudioTranscriptor {
             logInfo("TelegramAudioTranscriptor: Audio converted");
             return true;
         } catch (InterruptedException e) {
+            logError("TelegramAudioTranscriptor: Opusdec execution was interrupted " + e.getMessage());
             return false;
         } catch (IOException e) {
-            logError("TelegramAudioTranscriptor: Error during opusdec execution" + e.getLocalizedMessage());
+            logError("TelegramAudioTranscriptor: Error during opusdec execution" + e.getMessage());
             return false;
         }
     }
@@ -106,7 +107,7 @@ public class TelegramAudioTranscriptor {
                 text += trasc.getText();
             }
         } catch (NullPointerException e) {
-            logError("TelegramAudioTranscriptor: NullPointerException while transcripting audio: " + e.getLocalizedMessage());
+            logError("TelegramAudioTranscriptor: NullPointerException while transcripting audio: " + e.getMessage());
             text = "Error interno del servidor.";
         }
         new File("audio/" + file_id + ".oga").delete();
@@ -129,7 +130,7 @@ public class TelegramAudioTranscriptor {
         try {
             return (JSONObject) parser.parse(callString(url));
         } catch (ParseException e) {
-            logError("TelegramAudioTranscriptor: ParseException when retrieving JSON from " + url + ": " + e.getLocalizedMessage());
+            logError("TelegramAudioTranscriptor: ParseException when retrieving JSON from " + url + ": " + e.getMessage());
             return null;
         }
     }

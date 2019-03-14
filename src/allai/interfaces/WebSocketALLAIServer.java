@@ -33,7 +33,7 @@ public class WebSocketALLAIServer extends WebSocketServer{
 
 	@Override
 	public void onError(WebSocket arg0, Exception e) {
-		logError("WebSocketServer: Error occurred during connection: " + e.getLocalizedMessage());
+		logError("WebSocketServer: Error occurred during connection: " + e.getMessage());
 	}
 
 	@Override

@@ -29,7 +29,7 @@ public class FileManager {
             file = new File(filename);
             output = new BufferedReader(new FileReader(file));
         } catch (FileNotFoundException e) {
-            logError("FileManager: ERROR, File not found: " + e.getLocalizedMessage());
+            logError("FileManager: ERROR, File not found: " + e.getMessage());
         }
         return output;
     }
@@ -41,7 +41,7 @@ public class FileManager {
             writer.println(content);
             writer.close();
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
-            Logger.getLogger(FileManager.class.getName()).log(Level.SEVERE, null, ex);
+            logError("FileManager: An error occured while writing a file: " + ex.getMessage());
         }
     }
 

@@ -97,7 +97,7 @@ public class ALLAI {
             telegramBotsApi.registerBot(new TelegramALLAIBot());
             logInfo("ALLAI: Telegram Thread initialized");
         } catch (TelegramApiException e) {
-            logError("ALLAI: ERROR, Telegram thread could not be initialized: " + e.getLocalizedMessage());
+            logError("ALLAI: ERROR, Telegram thread could not be initialized: " + e.getMessage());
         }
     }
 
@@ -122,7 +122,7 @@ public class ALLAI {
             webSocketServerThread.join();
             reminder.join();
         } catch (InterruptedException ex) {
-            Logger.getLogger(ALLAI.class.getName()).log(Level.SEVERE, null, ex);
+            logError("ALLAI: A thread interrupted: " + ex.getMessage());
         }
     }
 }

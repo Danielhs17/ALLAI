@@ -1,5 +1,6 @@
 package allai.utils;
 
+import static allai.utils.ALLAILogger.logError;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -27,7 +28,7 @@ public class HTTPUtils {
             //Anche se <url> finisce già con un "?" non importa, un doppio "??" viene considerato come uno solo
             this.url= new URL(url+"?"+urlParameter);
         }catch (MalformedURLException ex){
-            ex.printStackTrace();
+            logError("HTTPUtils: An error occured while initializating the URL: " + ex.getMessage());
         }
         this.header = header;
         this.postData = postData;
@@ -55,7 +56,7 @@ public class HTTPUtils {
             return res;
 
         }catch(IOException ex){
-            ex.printStackTrace();
+            logError("HTTPUtils: An error occured during a POST request: " + ex.getMessage());
             responseCode= -1;
             return "";
         }

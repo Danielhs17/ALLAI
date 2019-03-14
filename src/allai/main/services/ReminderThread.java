@@ -6,6 +6,7 @@
 package allai.main.services;
 
 import allai.interfaces.keys.KEYS;
+import static allai.utils.ALLAILogger.logError;
 import allai.utils.DoubleArrayList;
 import allai.utils.HTTPUtils;
 import java.io.UnsupportedEncodingException;
@@ -46,7 +47,7 @@ public class ReminderThread extends Thread {
             try {
                 Thread.sleep(1000*30);
             } catch (InterruptedException ex) {
-                Logger.getLogger(ReminderThread.class.getName()).log(Level.SEVERE, null, ex);
+                logError("ReminderThread: Interrupted: " + ex.getMessage());
             }
         }
     }
@@ -60,13 +61,13 @@ public class ReminderThread extends Thread {
         try {
             encoded = URLEncoder.encode(text, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
-            ex.printStackTrace();
+            logError("ReminderThread: UnsuportedEncodingException? It is impossible that this exception raises: " + ex.getMessage());
         }
         String urlStr = "https://api.telegram.org/bot" + token + "/sendMessage?chat_id=" + chatId + "&amp&text=" + encoded;
         try {
             HTTPUtils.doGet(urlStr);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logError("ReminderThread: An error occurred while trying to send a reminder message: " + ex.getMessage());
         }
     }
 

@@ -35,25 +35,22 @@ public class CSVReader {
             InputStreamReader input = new InputStreamReader(connection.getInputStream());
             br = new BufferedReader(input);
         } catch (FileNotFoundException e) {
-            logError("CSVReader: ERROR, CSV File not found: " + e.getLocalizedMessage());
+            logError("CSVReader: ERROR, CSV File not found: " + e.getMessage());
         } catch (MalformedURLException e) {
-            logError("CSVReader: ERROR, Malformed URL Exception: " + e.getLocalizedMessage());
+            logError("CSVReader: ERROR, Malformed URL Exception: " + e.getMessage());
         } catch (IOException e) {
-            logError("CSVReader: ERROR, IO Exception: " + e.getLocalizedMessage());
+            logError("CSVReader: ERROR, IO Exception: " + e.getMessage());
         }
     }
 
     public String[] getNextLine() {
         String rawLine = null;
         String[] line = null;
-
         try {
             rawLine = br.readLine();
-            
         } catch (IOException e) {
-            e.printStackTrace();
+            logError("CSVReader: An error occured while reading a CSV file: " + e.getMessage());
         }
-        
         if (rawLine != null){
             rawLine = rawLine.replace("\"", "");
             line = rawLine.split(csvSplitBy);

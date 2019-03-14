@@ -57,7 +57,7 @@ public class TranslationService extends Service {
         try {
             urlEncodedText = URLEncoder.encode(text, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
-            ex.printStackTrace();
+            logError("TranslationService: UnsuportedEncodingException? It is impossible that this exception raises: " + ex.getMessage());
         }
         String url = "https://translate.yandex.net/api/v1.5/tr/translate?key=" + KEY + "&lang=" + toLanguage + "&text=" + urlEncodedText;
         try {
@@ -68,7 +68,7 @@ public class TranslationService extends Service {
                 response = errorEx;
             }
         } catch (Exception ex) {
-            logError("TranslationService: An error occurred while trying to translate: " + ex.getLocalizedMessage());
+            logError("TranslationService: An error occurred while trying to translate: " + ex.getMessage());
             response = errorEx;
         }
         return response;

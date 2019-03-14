@@ -35,7 +35,7 @@ public class DefaultResponsesLoader {
                 question = questionsReader.readLine();
             }
         } catch (Exception e){
-            logError("DefaultResponsesLoader: An error occured while trying to load the default responses: " + e.getLocalizedMessage());
+            logError("DefaultResponsesLoader: An error occured while trying to load the default responses: " + e.getMessage());
         }
         Dictionary.commitAndCloseDB();
     }

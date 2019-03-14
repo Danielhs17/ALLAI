@@ -60,7 +60,7 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
                 try {
                     dir.mkdir();
                 } catch (SecurityException e) {
-                    logError("Telegram: ERROR, no permission to create audio directory: " + e.getLocalizedMessage());
+                    logError("Telegram: ERROR, no permission to create audio directory: " + e.getMessage());
                     return;
                 }
             }
@@ -71,7 +71,7 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
                 response = ALLAI.getResponse(transcribed, chatId);
                 logInfo ("Response: " + response);
             } catch (IOException e) {
-                logInfo("Telegram: Error occurred during Telegram Audio transcription: " + e.getLocalizedMessage());
+                logError("Telegram: Error occurred during Telegram Audio transcription: " + e.getMessage());
             }
         }
         if (!response.equals("")) {
@@ -79,7 +79,7 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
             try {
                 execute(responseMessage);
             } catch (TelegramApiException e) {
-                logInfo ("Telegram: ERROR, could not send telegram message to chatId " + chatId + ":  " + e.getLocalizedMessage());
+                logError ("Telegram: ERROR, could not send telegram message to chatId " + chatId + ":  " + e.getMessage());
             }
         }
     }

@@ -5,6 +5,7 @@
  */
 package allai.main.services;
 
+import static allai.utils.ALLAILogger.logError;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import org.jsoup.Jsoup;
@@ -80,6 +81,7 @@ public class YouTubeService extends Service {
                     response += result[x][0] + "\n" + result[x][1] + "\n\n";
                 }
                 } catch (IOException e){
+                    logError("YouTubeService: An error occured while trying to search YouTube: " + e.getMessage());
                     response = error;
                 }
                 break;

@@ -6,6 +6,7 @@
 package allai.main.services;
 
 
+import static allai.utils.ALLAILogger.logError;
 import fastily.jwiki.core.*;
 import static allai.utils.ALLAILogger.logInfo;
 
@@ -81,7 +82,7 @@ public class WikipediaService extends Service {
         try{
             paragraphs.getChars(0, paragraphs.length(), chars, 0);
         } catch (Exception e){
-            e.printStackTrace();
+            logError("WikipediaService: I really don't know what went wrong with this one: " + e.getMessage());
         }
         for (int x=0; x<chars.length; x++){
             if (isText){
