@@ -81,7 +81,6 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
             Voice voice = message.getVoice();
             String text = message.getText();
             if (voice != null) {
-
                 logInfo("Telegram " + id + ": Got request (AUDIO) from chatId " + chatId);
                 isAudio = true;
             } else if (text != null) {
