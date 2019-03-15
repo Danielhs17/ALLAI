@@ -17,6 +17,7 @@ import static allai.utils.ALLAILogger.logInfo;
 public class CommandProcessor {
 
     public String error = "[X] No he entendido el comando que has enviado. Por favor, utiliza el comando \"/ayuda\" para más información.";
+    private String startCommand = "/start";
     private String busCommand = "/bus";
     private String parkingCommand = "/parking";
     private String helpCommand = "/ayuda";
@@ -56,7 +57,7 @@ public class CommandProcessor {
             return getServiceOutput(new BusService(args));
         } else if (input.startsWith(parkingCommand)){
             return getServiceOutput(new ParkingService(args));
-        } else if (input.startsWith(helpCommand)){
+        } else if (input.startsWith(helpCommand) || input.startsWith(startCommand)){
             return getServiceOutput(new HelpService(args));
         } else if (input.startsWith(searchCommand)){
             return getServiceOutput(new GoogleSearchService(args));
