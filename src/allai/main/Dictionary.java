@@ -22,6 +22,7 @@ import static allai.utils.ALLAILogger.logInfo;
  */
 public class Dictionary {
 
+    public static boolean dataBasesInUse = false;
     private static final String MAIN_DB_FILE = "allai.db";
     private static final String WORDS_DB_FILE = "allaiWords.db";
     private static final String RESPONSES_DB_FILE = "allaiResponses.db";

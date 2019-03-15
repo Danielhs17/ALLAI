@@ -19,6 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.Voice;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import static allai.utils.ALLAILogger.logInfo;
+import java.util.Random;
 
 /**
  * @author Daniel Alejandro Hurtado Simoes Universidad de Málaga TFG - Grado en
@@ -31,17 +32,19 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(final Update update) {
-        RequestWorker thread = new RequestWorker(update);
+        Random r = new Random();
+        int id = r.nextInt(1000)+1;
+        RequestWorker thread = new RequestWorker(update, id);
         thread.start();
     }
 
-    private void respondMessage(String response, long chatId) {
+    private void respondMessage(String response, long chatId, int id) {
         if (!response.equals("")) {
             SendMessage responseMessage = new SendMessage().setChatId(chatId).setText(response);
             try {
                 execute(responseMessage);
             } catch (TelegramApiException e) {
-                logError("Telegram: ERROR, could not send telegram message to chatId " + chatId + ":  " + e.getMessage());
+                logError("Telegram " + id + ": ERROR, could not send telegram message to chatId " + chatId + ":  " + e.getMessage());
             }
         }
     }
@@ -61,11 +64,11 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
     public class RequestWorker extends Thread {
 
         private Update update;
-        private long id;
+        private int id;
 
-        public RequestWorker(Update update) {
+        public RequestWorker(Update update, int id) {
             this.update = update;
-            id = Thread.currentThread().getId();
+            this.id = id;
         }
 
         @Override
@@ -79,44 +82,48 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
             String text = message.getText();
             if (voice != null) {
 
-                logInfo("Telegram: Got request (AUDIO) from chatId " + chatId);
+                logInfo("Telegram " + id + ": Got request (AUDIO) from chatId " + chatId);
                 isAudio = true;
             } else if (text != null) {
-                logInfo("Telegram: Got request (TEXT) from chatId " + chatId);
+                logInfo("Telegram " + id + ": Got request (TEXT) from chatId " + chatId);
                 isText = true;
             }
             if (isText) {
                 String messageTextReceived = update.getMessage().getText();
-                logInfo("Telegram: Received text: " + messageTextReceived);
-                response = getResponse(messageTextReceived, chatId);
-                logInfo("Telegram: Response: " + response);
+                logInfo("Telegram " + id + ": Received text: " + messageTextReceived);
+                response = getResponse(messageTextReceived, chatId, id);
+                logInfo("Telegram " + id + ": Response: " + response);
             } else if (isAudio) {
                 File dir = new File("audio");
                 if (!dir.exists()) {
                     try {
                         dir.mkdir();
                     } catch (SecurityException e) {
-                        logError("Telegram: ERROR, no permission to create audio directory: " + e.getMessage());
+                        response = "Parece que mi elfo ayudante tuvo problemas para escuchar tu audio ahora mismo! Lo siento!";
+                        logError("Telegram " + id + ": ERROR, no permission to create audio directory: " + e.getMessage());
                         return;
                     }
                 }
                 try {
                     TelegramAudioTranscriptor transcriptor = new TelegramAudioTranscriptor(message, url);
                     String transcribed = transcriptor.getTranscribedText();
-                    logInfo("Telegram: audio transcribed: " + transcribed);
-                    response = getResponse(transcribed, chatId);
-                    logInfo("Telegram: Response: " + response);
+                    logInfo("Telegram " + id + ": audio transcribed: " + transcribed);
+                    response = getResponse(transcribed, chatId, id);
+                    logInfo("Telegram " + id + ": Response: " + response);
                 } catch (IOException e) {
-                    logError("Telegram: Error occurred during Telegram Audio transcription: " + e.getMessage());
+                    logError("Telegram " + id + ": Error occurred during Telegram Audio transcription: " + e.getMessage());
+                    response = "Parece que mi elfo ayudante tuvo problemas para escuchar tu audio ahora mismo! Lo siento!";
                 }
             }
-            respondMessage(response, chatId);
+            if (response != null) {
+                respondMessage(response, chatId, id);
+            }
             return;
         }
 
-        public String getResponse(String phrase, long chatId) {
+        public String getResponse(String phrase, long chatId, int id) {
             ALLAI allai = new ALLAI();
-            return allai.getResponse(phrase, chatId);
+            return allai.getResponse(phrase, chatId, id);
         }
     }
 }

@@ -9,8 +9,11 @@ import allai.main.utils.DefaultResponsesLoader;
 import allai.utils.BookReader;
 import allai.main.utils.SpanishImportantWords;
 import allai.main.utils.WordContextInfo;
+import static allai.utils.ALLAILogger.logError;
 import java.util.ArrayList;
 import static allai.utils.ALLAILogger.logInfo;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Daniel Alejandro Hurtado Simoes Universidad de Málaga TFG - Grado en
@@ -23,6 +26,7 @@ public class LanguageAnalyzer {
     private ArrayList<WordContextInfo> analyzedPhrase;
     private static String lastResponse;
     private boolean firstLearn;
+    private int threadId;
 
     /**
      * * Instatiates a new LanguageAnalyzer object. This class is used for
@@ -160,20 +164,31 @@ public class LanguageAnalyzer {
      * to.
      * @return A response for the given phrase **
      */
-    public String getResponse(String phrase) {
+    public String getResponse(String phrase, int threadId) {
+        this.threadId = threadId;
         phrase = deleteSpecialChars(phrase);
+        while (Dictionary.dataBasesInUse){
+            logInfo("LanguageAnalyzer " + threadId + ": Dictionary in use, waiting for release.");
+            try {
+                Thread.sleep(1000*5);
+            } catch (InterruptedException ex) {
+                logError("LanguageAnalyzer " + threadId + ": ERROR, thread was interrupted while waiting to use the Dictionary.");
+            }
+        };
+        Dictionary.dataBasesInUse = true;
         if (!Dictionary.isDBOpen) {
             Dictionary.keepDBOpen = true;
             Dictionary.initializeDB();
         }
         String defaultResponse = Dictionary.getDefaultAnswer(phrase);
         if (!defaultResponse.equals("")) {
-            logInfo("LanguageAnalyzer: Default response found: " + defaultResponse);
+            logInfo("LanguageAnalyzer " + threadId + ": Default response found: " + defaultResponse);
             // If the default response is a whole phrase by itself, return it. If it is just one word, construct a phrase with it
             if (defaultResponse.split(" ").length > 1) {
                 if (Dictionary.isDBOpen) {
                     Dictionary.commitAndCloseDB();
                 }
+                Dictionary.dataBasesInUse = false;
                 return defaultResponse;
             } else {
                 String response = getPhraseWithRootWord(defaultResponse);
@@ -181,23 +196,25 @@ public class LanguageAnalyzer {
                 if (Dictionary.isDBOpen) {
                     Dictionary.commitAndCloseDB();
                 }
+                Dictionary.dataBasesInUse = false;
                 return response;
             }
         } else {
             String response = "";
             String phraseRootWord = SpanishImportantWords.getMostImportantWord(phrase);
-            logInfo("LanguageAnalyzer: Most important word: " + phraseRootWord);
+            logInfo("LanguageAnalyzer " + threadId + ": Most important word: " + phraseRootWord);
             String rootWord = Dictionary.getResponse(phraseRootWord);
             if (rootWord.equals("")) {
                 rootWord = phraseRootWord;
-                logInfo("LanguageAnalyzer: No answer found to root word, using " + rootWord + " as root word");
+                logInfo("LanguageAnalyzer " + threadId + ": No answer found to root word, using " + rootWord + " as root word");
             }
-            logInfo("LanguageAnalyzer: Retrieving phrase with root word: " + rootWord);
+            logInfo("LanguageAnalyzer " + threadId + ": Retrieving phrase with root word: " + rootWord);
             response = getPhraseWithRootWord(rootWord);
             learnNewPhrase(phrase);
             if (Dictionary.isDBOpen) {
                 Dictionary.commitAndCloseDB();
             }
+            Dictionary.dataBasesInUse = false;
             lastResponse = response;
             return response;
         }

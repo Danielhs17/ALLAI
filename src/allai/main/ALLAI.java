@@ -20,7 +20,7 @@ import static allai.utils.ALLAILogger.logInfo;
  */
 public class ALLAI {
 
-    private Interpreter interpreter = new Interpreter();;
+    private Interpreter interpreter;
     private static ArrayList<Long> quietModeOn = new ArrayList<>();
     
     private static Thread webSocketServerThread;
@@ -39,6 +39,7 @@ public class ALLAI {
      * @param phrase: The phrase entered by the user, that ALLAI should respond to.
      * @return A response for the given phrase ***/
     public String getResponse(String phrase) {
+        interpreter = new Interpreter();
         return makeTextPretty(interpreter.getResponse(phrase));
     }
     
@@ -46,13 +47,15 @@ public class ALLAI {
      * @param phrase: The phrase entered by the user, that ALLAI should respond to.
      * @param chatId: The chatId from where the user contacted ALLAI.
      * @return A response for the given phrase ***/
-    public String getResponse(String phrase, long chatId) {
-        return makeTextPretty(interpreter.getResponse(phrase, chatId));
+    public String getResponse(String phrase, long chatId, int threadId) {
+        interpreter = new Interpreter();
+        return makeTextPretty(interpreter.getResponse(phrase, chatId, threadId));
     }
 
     /*** Get a random phrase from ALLAI.
      * @return A String containing the phrase.***/
     public String getRandomPhrase() {
+        interpreter = new Interpreter();
         return makeTextPretty(interpreter.getRandomPhrase());
     }
     

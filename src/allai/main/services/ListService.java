@@ -32,6 +32,8 @@ public class ListService extends Service {
         ENUMERARLISTAS, CREARLISTA, VACIARLISTA, MOSTRARLISTA, ELIMINARLISTA, AGREGARELEM, QUITARELEM, ERROR
     }
     private Service service;
+    
+    private static boolean fileInUse = false;
 
     // /lista crear [nombre]
     // /lista nombre agregar [objeto]
@@ -131,6 +133,8 @@ public class ListService extends Service {
     private String createList() {
         String alreadyExists = "Oh, parece que ya tienes una lista con ese nombre! Si deseas ver todas las listas que tienes, lo que contiene alguna, o borrar alguna, utiliza el comando \"/ayuda listas\" para averiguar cómo hacerlo!";
         String response;
+        while (fileInUse);
+        fileInUse = true;
         JSONObject users = getFileContent();
         if (!users.containsKey(chatId)) {
             users.put(chatId, new JSONObject());
@@ -146,11 +150,14 @@ public class ListService extends Service {
             users.put(chatId, lists);
             saveToFile(users);
         }
+        fileInUse = false;
         return response;
     }
 
     private String eliminateList() {
         String response;
+        while (fileInUse);
+        fileInUse = true;
         JSONObject users = getFileContent();
         if (!users.containsKey(chatId)) {
             users.put(chatId, new JSONObject());
@@ -166,12 +173,16 @@ public class ListService extends Service {
         } else {
             response = "Oh, lo siento, no he encontrado ninguna lista con ese nombre!";
         }
+        fileInUse = false;
         return response;
     }
 
     private String showAllLists() {
         String response;
+        while (fileInUse);
+        fileInUse = true;
         JSONObject users = getFileContent();
+        fileInUse = false;
         if (!users.containsKey(chatId)) {
             response = "No tienes ninguna lista!";
         } else {
@@ -187,6 +198,8 @@ public class ListService extends Service {
 
     private String emptyList() {
         String response;
+        while(fileInUse);
+        fileInUse = true;
         JSONObject users = getFileContent();
         if (!users.containsKey(chatId)) {
             users.put(chatId, new JSONObject());
@@ -203,12 +216,16 @@ public class ListService extends Service {
         } else {
             response = "Oh, lo siento, no he encontrado ninguna lista con ese nombre!";
         }
+        fileInUse = false;
         return response;
     }
 
     private String showList() {
         String response;
+        while (fileInUse);
+        fileInUse = true;
         JSONObject users = getFileContent();
+        fileInUse = false;
         if (!users.containsKey(chatId)) {
             response = "No tienes ninguna lista!";
         } else {
@@ -231,6 +248,8 @@ public class ListService extends Service {
 
     private String addElement() {
         String response;
+        while (fileInUse);
+        fileInUse = true;
         JSONObject users = getFileContent();
         if (!users.containsKey(chatId)) {
             response = "No tienes ninguna lista!";
@@ -250,11 +269,14 @@ public class ListService extends Service {
                 response = "No tienes ninguna lista con ese nombre!";
             }
         }
+        fileInUse = false;
         return response;
     }
 
     private String deleteElement() {
         String response;
+        while (fileInUse);
+        fileInUse = true;
         JSONObject users = getFileContent();
         if (!users.containsKey(chatId)) {
             response = "No tienes ninguna lista!";
@@ -292,6 +314,7 @@ public class ListService extends Service {
                 response = "No tienes ninguna lista con ese nombre!";
             }
         }
+        fileInUse = false;
         return response;
     }
 
