@@ -6,7 +6,6 @@
 package allai.main;
 
 import allai.main.services.*;
-import allai.utils.ALLAILogger;
 import static allai.utils.ALLAILogger.logInfo;
 
 /**
@@ -16,6 +15,8 @@ import static allai.utils.ALLAILogger.logInfo;
  */
 public class CommandProcessor {
 
+    private int threadId;
+    
     public String error = "[X] No he entendido el comando que has enviado. Por favor, utiliza el comando \"/ayuda\" para más información.";
     private String startCommand = "/start";
     private String busCommand = "/bus";
@@ -35,6 +36,10 @@ public class CommandProcessor {
     private String quietOnResponse = "Está bien, a partir de ahora solo contestaré a comandos! Si quieres que vuelva a hablar envía /hablar o dime \"Allai, habla\"";
     private String quietOffResponse = "Bien! Empezaré a hablar de nuevo!";
 
+    public CommandProcessor(int threadId){
+        this.threadId = threadId;
+    }
+    
     /*** Determines if a phrase received from the user is a raw command. A raw command is a command in the shape /command [arguments].
      @param input: The possible command.
      @return True if it is a raw comand or false otherwise.***/
@@ -47,7 +52,7 @@ public class CommandProcessor {
      * @param chatId: The chatId associated to the received command.
      * @return A response for the given command.***/
     public String respondCommand(String input, long chatId) {
-        logInfo("CommandProcessor: Command received, processing");
+        logInfo("CommandProcessor " + threadId + ": Command received, processing");
         return processCommand(input, chatId);
     }
 

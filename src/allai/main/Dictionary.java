@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import org.mapdb.*;
-import static allai.utils.ALLAILogger.logInfo;
 
 /**
  * @author Daniel Alejandro Hurtado Simoes

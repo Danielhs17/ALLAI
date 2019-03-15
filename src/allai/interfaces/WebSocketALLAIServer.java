@@ -13,6 +13,7 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import static allai.utils.ALLAILogger.logInfo;
+import java.util.Random;
 
 /**
  * @author Daniel Alejandro Hurtado Simoes Universidad de Málaga TFG - Grado en
@@ -38,7 +39,9 @@ public class WebSocketALLAIServer extends WebSocketServer {
     @Override
     public void onMessage(WebSocket webSocket, String mensaje) {
         logInfo("WebSocketServer: Received message: " + mensaje);
-        RequestWorker thread = new RequestWorker(webSocket, mensaje);
+        Random r = new Random();
+        int id = r.nextInt(1000)+1;
+        RequestWorker thread = new RequestWorker(webSocket, mensaje, id);
         thread.start();
     }
 
@@ -51,15 +54,17 @@ public class WebSocketALLAIServer extends WebSocketServer {
 
         private WebSocket webSocket;
         private String mensaje;
+        private int threadId;
 
-        private RequestWorker(WebSocket webSocket, String mensaje) {
+        private RequestWorker(WebSocket webSocket, String mensaje, int threadId) {
             this.webSocket = webSocket;
             this.mensaje = mensaje;
+            this.threadId = threadId;
         }
 
         @Override
         public void run() {
-            ALLAI allai = new ALLAI();
+            ALLAI allai = new ALLAI(threadId);
             String response = allai.getResponse(mensaje) + '\n';
             logInfo("WebSocketServer: Sending response: " + response);
             webSocket.send(response);

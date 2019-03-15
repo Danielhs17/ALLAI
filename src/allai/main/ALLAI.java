@@ -25,7 +25,10 @@ public class ALLAI {
     
     private static Thread webSocketServerThread;
     private static Thread reminder;
-
+    
+    public ALLAI(int threadId){
+        interpreter = new Interpreter(threadId);
+    }
     public static void main(String[] args) throws Exception {
         logInfo("ALLAI Initializing: Launching Threads");
         launchWebSocketServer();
@@ -39,7 +42,6 @@ public class ALLAI {
      * @param phrase: The phrase entered by the user, that ALLAI should respond to.
      * @return A response for the given phrase ***/
     public String getResponse(String phrase) {
-        interpreter = new Interpreter();
         return makeTextPretty(interpreter.getResponse(phrase));
     }
     
@@ -47,15 +49,13 @@ public class ALLAI {
      * @param phrase: The phrase entered by the user, that ALLAI should respond to.
      * @param chatId: The chatId from where the user contacted ALLAI.
      * @return A response for the given phrase ***/
-    public String getResponse(String phrase, long chatId, int threadId) {
-        interpreter = new Interpreter();
-        return makeTextPretty(interpreter.getResponse(phrase, chatId, threadId));
+    public String getResponse(String phrase, long chatId) {
+        return makeTextPretty(interpreter.getResponse(phrase, chatId));
     }
 
     /*** Get a random phrase from ALLAI.
      * @return A String containing the phrase.***/
     public String getRandomPhrase() {
-        interpreter = new Interpreter();
         return makeTextPretty(interpreter.getRandomPhrase());
     }
     

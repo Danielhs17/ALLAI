@@ -12,8 +12,6 @@ import allai.main.utils.WordContextInfo;
 import static allai.utils.ALLAILogger.logError;
 import java.util.ArrayList;
 import static allai.utils.ALLAILogger.logInfo;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Daniel Alejandro Hurtado Simoes Universidad de Málaga TFG - Grado en
@@ -25,8 +23,8 @@ public class LanguageAnalyzer {
     private BookReader reader;
     private ArrayList<WordContextInfo> analyzedPhrase;
     private static String lastResponse;
-    private boolean firstLearn;
-    private int threadId;
+    private boolean firstLearn = false;
+    private int threadId = 0;
 
     /**
      * * Instatiates a new LanguageAnalyzer object. This class is used for
@@ -41,7 +39,8 @@ public class LanguageAnalyzer {
      * false for default use (responses and random phrases construction)
     **
      */
-    public LanguageAnalyzer(String filename, boolean otherBook, boolean firstLearn) {
+    public LanguageAnalyzer(String filename, boolean otherBook, boolean firstLearn, int threadId) {
+        this.threadId = threadId;
         if (otherBook) {
             book = filename;
         }
@@ -63,7 +62,7 @@ public class LanguageAnalyzer {
      * hours or more is possible). **
      */
     private void firstLearning() {
-        logInfo("LanguageAnalyzer: [FIRST LEARNING INITIATED]");
+        logInfo("LanguageAnalyzer " + threadId + ": [FIRST LEARNING INITIATED]");
         int count = 0;
         ArrayList<String> phrase = reader.nextPhrase();
         while (!phrase.get(0).equals(BookReader.NO_NEXT)) {
@@ -72,7 +71,7 @@ public class LanguageAnalyzer {
             phrase = reader.nextPhrase();
             count++;
             if (count%100 == 0) {
-                logInfo("LanguageAnalyzer: [FIRST LEARNING UPDATE] " + count + " new phrases have been learned");
+                logInfo("LanguageAnalyzer " + threadId + ": [FIRST LEARNING UPDATE] " + count + " new phrases have been learned");
             }
         }
     }
@@ -99,7 +98,7 @@ public class LanguageAnalyzer {
      */
     private void storeLearnedInfo(ArrayList<WordContextInfo> phrase) {
         if(!firstLearn){
-            logInfo("LanguageAnalyzer: Storing learned info");
+            logInfo("LanguageAnalyzer " + threadId + ": Storing learned info");
         }
         if (!Dictionary.isDBOpen) {
             Dictionary.keepDBOpen = true;
@@ -164,8 +163,7 @@ public class LanguageAnalyzer {
      * to.
      * @return A response for the given phrase **
      */
-    public String getResponse(String phrase, int threadId) {
-        this.threadId = threadId;
+    public String getResponse(String phrase) {
         phrase = deleteSpecialChars(phrase);
         while (Dictionary.dataBasesInUse){
             logInfo("LanguageAnalyzer " + threadId + ": Dictionary in use, waiting for release.");
@@ -255,11 +253,11 @@ public class LanguageAnalyzer {
                 }
                 response = phraseRoot + getPhraseWithFirstWord(rootWord);
             } else {
-                logInfo("LanguageAnalyzer: Not able to construct phrase with root word. Responding random phrase");
+                logInfo("LanguageAnalyzer " + threadId + ": Not able to construct phrase with root word. Responding random phrase");
                 response = getRandomPhrase();
             }
         }
-        logInfo("LanguageAnalyzer: Root Word response: " + response);
+        logInfo("LanguageAnalyzer " + threadId + ": Root Word response: " + response);
         return response;
     }
 

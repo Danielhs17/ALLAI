@@ -19,11 +19,12 @@ public class Interpreter {
     private final CommandProcessor processor;
     private ArrayList<String> implicitCommands;
     private ArrayList<String> relativeCommands;
-    private int threadId;
+    private int threadId = 0;
 
-    public Interpreter() {
-        processor = new CommandProcessor();
-        analyzer = new LanguageAnalyzer(null, false, false);
+    public Interpreter(int threadId) {
+        this.threadId = threadId;
+        processor = new CommandProcessor(threadId);
+        analyzer = new LanguageAnalyzer(null, false, false, threadId);
         initializeImplicitCommandsList();
     }
 
@@ -35,12 +36,12 @@ public class Interpreter {
             String translated = translateCommand(phrase);
             String responded = processor.respondCommand(translated, 0);
             if (responded.startsWith("[X]") && !processor.isARawCommand(phrase)) {
-                return analyzer.getResponse(phrase.toLowerCase(), 0);
+                return analyzer.getResponse(phrase.toLowerCase());
             } else {
                 return responded;
             }
         } else {
-                return analyzer.getResponse(phrase.toLowerCase(), 0);
+                return analyzer.getResponse(phrase.toLowerCase());
         }
     }
     
@@ -48,14 +49,13 @@ public class Interpreter {
      * @param phrase: The phrase entered by the user, that ALLAI should respond to.
      * @param chatId: The chatId from where the user contacted ALLAI.
      * @return A response for the given phrase ***/
-    public String getResponse(String phrase, long chatId, int threadId){
-        this.threadId = threadId;
+    public String getResponse(String phrase, long chatId){
         if (isACommand(phrase)) {
             logInfo("Interpreter " + threadId + ": Received message is a command");
             String translated = translateCommand(phrase);
             String responded = processor.respondCommand(translated, chatId);
             if (responded.startsWith("[X]") && !processor.isARawCommand(phrase)) {
-                return analyzer.getResponse(phrase.toLowerCase(), threadId);
+                return analyzer.getResponse(phrase.toLowerCase());
             } else {
                 return responded;
             }
@@ -66,7 +66,7 @@ public class Interpreter {
                 return "";
             } else {
                 logInfo("Interpreter " + threadId + ": QuietMode is OFF, getting response");
-                return analyzer.getResponse(phrase.toLowerCase(), threadId);
+                return analyzer.getResponse(phrase.toLowerCase());
             }
         }
     }

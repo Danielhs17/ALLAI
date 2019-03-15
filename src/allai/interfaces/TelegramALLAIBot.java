@@ -121,8 +121,8 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
         }
 
         public String getResponse(String phrase, long chatId, int id) {
-            ALLAI allai = new ALLAI();
-            return allai.getResponse(phrase, chatId, id);
+            ALLAI allai = new ALLAI(id);
+            return allai.getResponse(phrase, chatId);
         }
     }
 }
