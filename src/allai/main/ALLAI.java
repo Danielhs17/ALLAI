@@ -29,6 +29,7 @@ public class ALLAI {
     public ALLAI(int threadId){
         interpreter = new Interpreter(threadId);
     }
+    
     public static void main(String[] args) throws Exception {
         logInfo("ALLAI Initializing: Launching Threads");
         launchWebSocketServer();
