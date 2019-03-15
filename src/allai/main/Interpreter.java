@@ -177,6 +177,7 @@ public class Interpreter {
         addCommandPair("recuérdame ", "/recordar ");
         addCommandPair("recuerdame ", "/recordar ");     
         addCommandPair("allai cállate", "/callar");
+        addCommandPair("allai callate", "/callar");
         addCommandPair("allai, callate", "/callar");
         addCommandPair("allai, habla", "/hablar");
         addCommandPair("allai habla", "/hablar");

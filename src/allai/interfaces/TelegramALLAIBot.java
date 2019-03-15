@@ -7,8 +7,7 @@ package allai.interfaces;
 
 import allai.interfaces.keys.KEYS;
 import allai.interfaces.audio.*;
-import static allai.main.ALLAI.makeTextPretty;
-import allai.main.Interpreter;
+import allai.main.ALLAI;
 import static allai.utils.ALLAILogger.logError;
 import java.io.File;
 import java.io.IOException;
@@ -116,8 +115,8 @@ public class TelegramALLAIBot extends TelegramLongPollingBot {
         }
 
         public String getResponse(String phrase, long chatId) {
-            Interpreter interpreter = new Interpreter();
-            return makeTextPretty(interpreter.getResponse(phrase, chatId));
+            ALLAI allai = new ALLAI();
+            return allai.getResponse(phrase, chatId);
         }
     }
 }

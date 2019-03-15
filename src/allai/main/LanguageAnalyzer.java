@@ -95,7 +95,7 @@ public class LanguageAnalyzer {
      */
     private void storeLearnedInfo(ArrayList<WordContextInfo> phrase) {
         if(!firstLearn){
-            logInfo("LanguageAnalyzer: Storing learnd info");
+            logInfo("LanguageAnalyzer: Storing learned info");
         }
         if (!Dictionary.isDBOpen) {
             Dictionary.keepDBOpen = true;
@@ -118,12 +118,12 @@ public class LanguageAnalyzer {
         if (!lastResponse.equals(" ")) {
             Dictionary.addAsResponse(SpanishImportantWords.getMostImportantWord(lastResponse), SpanishImportantWords.getMostImportantWord(phrase));
         }
-        String subPhrases[] = phrase.split(". ");
-        for (int i = 0; i < subPhrases.length; i++) {
-            ArrayList<String> arrayPhrase = convertToArrayList(deleteSpecialChars(subPhrases[i]));
+        //String subPhrases[] = phrase.split(".");
+        //for (int i = 0; i < subPhrases.length; i++) {
+            ArrayList<String> arrayPhrase = convertToArrayList(deleteSpecialChars(phrase));
             analyzedPhrase = getWordsInfo(arrayPhrase);
             storeLearnedInfo(analyzedPhrase);
-        }
+        //}
     }
 
     /**
@@ -177,6 +177,7 @@ public class LanguageAnalyzer {
                 return defaultResponse;
             } else {
                 String response = getPhraseWithRootWord(defaultResponse);
+                learnNewPhrase(phrase);
                 if (Dictionary.isDBOpen) {
                     Dictionary.commitAndCloseDB();
                 }

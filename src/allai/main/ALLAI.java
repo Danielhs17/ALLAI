@@ -20,7 +20,7 @@ import static allai.utils.ALLAILogger.logInfo;
  */
 public class ALLAI {
 
-    private static Interpreter interpreter = new Interpreter();;
+    private Interpreter interpreter = new Interpreter();;
     private static ArrayList<Long> quietModeOn = new ArrayList<>();
     
     private static Thread webSocketServerThread;
@@ -38,7 +38,7 @@ public class ALLAI {
      * * Call this function to get a response from ALLAI to a given sentence.
      * @param phrase: The phrase entered by the user, that ALLAI should respond to.
      * @return A response for the given phrase ***/
-    public static String getResponse(String phrase) {
+    public String getResponse(String phrase) {
         return makeTextPretty(interpreter.getResponse(phrase));
     }
     
@@ -46,13 +46,13 @@ public class ALLAI {
      * @param phrase: The phrase entered by the user, that ALLAI should respond to.
      * @param chatId: The chatId from where the user contacted ALLAI.
      * @return A response for the given phrase ***/
-    public static String getResponse(String phrase, long chatId) {
+    public String getResponse(String phrase, long chatId) {
         return makeTextPretty(interpreter.getResponse(phrase, chatId));
     }
 
     /*** Get a random phrase from ALLAI.
      * @return A String containing the phrase.***/
-    public static String getRandomPhrase() {
+    public String getRandomPhrase() {
         return makeTextPretty(interpreter.getRandomPhrase());
     }
     
@@ -81,7 +81,7 @@ public class ALLAI {
      * @param input: The String to be transformed
      * @return The same input String, but with the first letter as upper case,
      * and ending with a dot. ***/
-    private static String makeTextPretty(String input) {
+    public String makeTextPretty(String input) {
         if (input.length() > 1) {
             return input.substring(0, 1).toUpperCase() + input.substring(1);
         } else {

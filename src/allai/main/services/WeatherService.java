@@ -16,11 +16,13 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import static allai.utils.ALLAILogger.logInfo;
+import java.net.URLDecoder;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * @author Daniel Alejandro Hurtado Simoes
- * Universidad de Málaga
- * TFG - Grado en Ingeniería Telemática
+ * @author Daniel Alejandro Hurtado Simoes Universidad de Málaga TFG - Grado en
+ * Ingeniería Telemática
  */
 public class WeatherService extends Service {
 
@@ -34,7 +36,7 @@ public class WeatherService extends Service {
         WEATHER, ERROR
     }
     private Service service;
-    private String error = "Te has complicado mucho! Este comando no lleva argumentos, simplemente escribe /clima";
+    private String error = "Lo siento! No he encontrado ese lugar!";
     private boolean alternative = false;
     private String clouds;
     private String temperature;
@@ -45,14 +47,26 @@ public class WeatherService extends Service {
     public WeatherService(String[] arg) {
         logInfo("WeatherService: Initiated");
         int arguments = arg.length;
-        if (arguments > 2) {
-            service = Service.ERROR;
-        } else {
-            if (arguments == 2){
-                alternative = true;
-                city = arg[1].toLowerCase().replaceAll("[^A-Za-z0-9]", "");;
-            }
+        if (arguments == 1){
             service = Service.WEATHER;
+        } else if (arguments == 2) {
+            alternative = true;
+            city = arg[1].toLowerCase().replaceAll("[^A-Za-z0-9]", "");
+            service = Service.WEATHER;
+        } else if (arguments > 2) {
+            alternative = true;
+            String temp = "";
+            for (int x = 1; x < arguments; x++) {
+                temp += arg[x].toLowerCase().replaceAll("[^A-Za-z0-9]", "") + " ";
+            }
+            temp = temp.substring(0, temp.length() - 1);
+            try {
+                city = URLEncoder.encode(temp, "UTF-8");
+                service = Service.WEATHER;
+            } catch (UnsupportedEncodingException ex) {
+                logError("WeatherService: URL Encoding exception " + ex.getMessage());
+                service = Service.ERROR;
+            }
         }
     }
 
@@ -73,7 +87,7 @@ public class WeatherService extends Service {
     private String getWeather() {
         String response;
         String usedUrl;
-        if (alternative){
+        if (alternative) {
             usedUrl = alternativeURL + city + "&APPID=" + APIKEY;
         } else {
             usedUrl = url;
@@ -84,7 +98,7 @@ public class WeatherService extends Service {
             JSONObject object = (JSONObject) parser.parse(getResult);
             JSONObject main = (JSONObject) object.get("main");
             double tempF = (double) main.get("temp");
-            temperature = truncateDecimal(kelvinToCelsius(tempF),2) + " °C";
+            temperature = truncateDecimal(kelvinToCelsius(tempF), 2) + " °C";
             humidity = main.get("humidity") + "%";
             JSONObject windObject = (JSONObject) object.get("wind");
             double speed = toKMH((double) windObject.get("speed"));
@@ -102,7 +116,8 @@ public class WeatherService extends Service {
             } else if (cloudsPercentage >= 35) {
                 clouds = "Nublado";
             }
-            response = "Clima en " + city + ":\n"
+            String prettyCity = URLDecoder.decode(city, "UTF-8");
+            response = "Clima en " + prettyCity + ":\n"
                     + "Temperatura: " + temperature + "\n"
                     + "Humedad: " + humidity + "\n"
                     + "Viento: " + wind + "\n"
@@ -116,7 +131,7 @@ public class WeatherService extends Service {
     }
 
     private static double kelvinToCelsius(double f) {
-        return f-273.15;
+        return f - 273.15;
     }
 
     private double toKMH(double mph) {
