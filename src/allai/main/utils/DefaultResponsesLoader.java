@@ -6,7 +6,6 @@
 package allai.main.utils;
 
 import allai.main.Dictionary;
-import static allai.utils.ALLAILogger.logError;
 import allai.utils.FileManager;
 import java.io.BufferedReader;
 
@@ -25,18 +24,18 @@ public class DefaultResponsesLoader {
         String response;
         questionsReader = FileManager.readFromFile(questions);
         responsesReader = FileManager.readFromFile(responses);
-        Dictionary.initializeDB();;
         
         try{
             question = questionsReader.readLine();
             while (question != null){
                 response = responsesReader.readLine();
-                Dictionary.loadDefaultResponse(question, response);
+                Dictionary.addResponse(question, response);
                 question = questionsReader.readLine();
             }
         } catch (Exception e){
-            logError("DefaultResponsesLoader: An error occured while trying to load the default responses: " + e.getMessage());
+            //logError("DefaultResponsesLoader: An error occured while trying to load the default responses: " + e.getMessage());
+            System.out.println("ERROR CARGANDO LAS RESPUESTAS POR DEFECTO");
+            e.printStackTrace();
         }
-        Dictionary.commitAndCloseDB();
     }
 }

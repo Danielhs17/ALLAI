@@ -42,6 +42,9 @@ public class SpanishImportantWords {
     //Returns the most important word of a sentence (by syllable count)
     //Returns "" in case of error
     public static String getMostImportantWord(String sentence){
+        while (sentence.startsWith(" ")){
+            sentence = sentence.substring(1);
+        }
         int[] syllables = getSyllablesCount(sentence);
         double[] importance = new double[syllables.length];
         for (int x=0; x<syllables.length; x++){

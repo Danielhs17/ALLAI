@@ -32,6 +32,7 @@ public class ALLAI {
     
     public static void main(String[] args) throws Exception {
         logInfo("ALLAI Initializing: Launching Threads");
+        initializeDictionary();
         launchWebSocketServer();
         launchTelegramBot();
         launchReminderThread();
@@ -93,6 +94,10 @@ public class ALLAI {
         }
     }
 
+    private static void initializeDictionary() {
+        Dictionary.start();
+    }
+        
     /*** Launch Telegram interface. ***/
     private static void launchTelegramBot() {
         ApiContextInitializer.init();

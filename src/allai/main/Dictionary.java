@@ -5,14 +5,19 @@
  */
 package allai.main;
 
-import allai.main.utils.WordContextInfo;
 import static allai.utils.ALLAILogger.logError;
+import static allai.utils.ALLAILogger.logInfo;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ThreadLocalRandom;
-import org.mapdb.*;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.h2.tools.Server;
 
 /**
  * @author Daniel Alejandro Hurtado Simoes
@@ -21,316 +26,446 @@ import org.mapdb.*;
  */
 public class Dictionary {
 
-    public static boolean dataBasesInUse = false;
-    private static final String MAIN_DB_FILE = "allai.db";
-    private static final String WORDS_DB_FILE = "allaiWords.db";
-    private static final String RESPONSES_DB_FILE = "allaiResponses.db";
-    private static final String ISLASTWORD = "ISLASTWORD";
-    private static final String ISFIRSTWORD = "ISFIRSTWORD";
-    public static boolean keepDBOpen = false;
-    private static DB db;
-    private static DB wordsDB;
-    private static DB responsesDB;
-    private static int count = 0;
-    public static boolean isDBOpen = false;
+    private static String urlJDBC = "jdbc:h2:tcp://localhost/~/ALLAI/db/ALLAI";
+    private static String urlJDBCresponses = "jdbc:h2:tcp://localhost/~/ALLAI/db/ALLAIresponses";
 
-    /*** For a given database map, where keys are Strings and values are Integers, 
-     * adds a new key-value pair with the given word as key, or sums one to the value if the word was already a key in the map.
-     * @param map: The map where the word key will be added or updated. This map's keys must be Strings, and values must be Integers.
-     * @param word: The word to add as key, or to add one to it's value.***/
-    private static void addOrUpdateParameter(ConcurrentMap map, String word) {
+    private static Connection dbConn;
+    private static Connection dbRespConn;
+    private static Server server;
+
+    /**
+     * * Starts H2 server and initializes DB Connections.
+     */
+    public static void start() {
+        startServer();
+        initConnections();
+    }
+
+    /**
+     * * Stops H2 server and closes DB Connections.
+     */
+    public static void stop() {
+        stopServer();
+        closeConnections();
+    }
+
+    /**
+     * * Start H2 server.
+     */
+    private static void startServer() {
         try {
-            if (map.get(word) == null) {
-                map.put(word, 1);
+            Class.forName("org.h2.Driver");
+            server = Server.createTcpServer("-tcpAllowOthers").start();
+            logInfo("Dictionary: H2 Server started");
+        } catch (Exception e) {
+            logError("Dictionary: H2 Server could not be started: " + e.getMessage());
+        }
+    }
+
+    /**
+     * * Stop H2 server.
+     */
+    private static void stopServer() {
+        server.stop();
+        logInfo("Dictionary: H2 Server stopped");
+    }
+
+    /**
+     * * Initializes dbConn and dbRespConn.
+     */
+    private static void initConnections() {
+        try {
+            dbConn = DriverManager.getConnection(urlJDBC, "sa", "");
+            dbRespConn = DriverManager.getConnection(urlJDBCresponses, "sa", "");
+        } catch (SQLException ex) {
+            logError("Dictionary: An error occured while trying to initialize connections: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * * Close dbConn and dbRespConn.
+     */
+    private static void closeConnections() {
+        try {
+            dbConn.close();
+            dbRespConn.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(Dictionary.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    /**
+     * * Checks if the connection is still active. If it is, it returns it. If not, it initializes it and returns it.
+     * 
+     * @return: A valid dbConn connection.
+     */
+    private static Connection getDBConnection() {
+        try {
+            if (dbConn.isValid(0)) {
+                return dbConn;
             } else {
-                int result = (int) map.get(word);
-                result++;
-                map.put(word, result);
+                initConnections();
+                return dbConn;
             }
-        } catch (Exception e) {
-            logError("Dictionary: Exception at addOrUpdateParameter. Word: " + word + " ." + e.getMessage());
+        } catch (SQLException ex) {
+            logError("Dictionary: An error occurred while checking if dbConn was valid: " + ex.getMessage());
+            initConnections();
+            return dbConn;
         }
     }
 
-    /*** Initializes all databases. This function is used when 'keepDBOpen'
-     * parameter is set to true. Not closing the databases when several accesses
-     * to it are needed avoids a lot of time wasted by opening and closing it
-     * repeadetly. Remember to call function 'commitAndClose()' when you are
-     * done using the database to avoid data corruption.***/
-    public static void initializeDB() {
+    /**
+     * * Checks if the connection is still active. If it is, it returns it. If not, it initializes it and returns it.
+     * 
+     * @return: A valid dbRespConn connection.
+     */
+    private static Connection getDBRespConnection() {
         try {
-            db = DBMaker.fileDB(MAIN_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().make();
-            wordsDB = DBMaker.fileDB(WORDS_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().make();
-            responsesDB = DBMaker.fileDB(RESPONSES_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().make();
-        } catch (Exception e) {
-            db = DBMaker.fileDB(MAIN_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().checksumHeaderBypass().make();
-            wordsDB = DBMaker.fileDB(WORDS_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().checksumHeaderBypass().make();
-            responsesDB = DBMaker.fileDB(RESPONSES_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().checksumHeaderBypass().make();
-        }
-        db.getStore().fileLoad();
-        wordsDB.getStore().fileLoad();
-        responsesDB.getStore().fileLoad();
-        isDBOpen = true;
-        keepDBOpen = true;
-    }
-
-    /*** Perform a commit and a close operation on all databases. 
-     * Call this function if you have called 'initializeDB()' previously.***/
-    public static void commitAndCloseDB() {
-        db.commit();
-        db.close();
-        wordsDB.commit();
-        wordsDB.close();
-        responsesDB.commit();
-        responsesDB.close();
-        keepDBOpen = false;
-        isDBOpen = false;
-    }
-
-    /*** The dictionary stores information NOT by probability, but with counters.
-     * For example, if a word has been found 3 times to the right of the other, the number 3 will be stored.**
-     * @param word: A WordContextInfo object for the word to learn. ***/
-    public static void updateDictionary(WordContextInfo word) {
-        if (!word.word.equals("")) {
-            if (!keepDBOpen) {
-                db = DBMaker.fileDB(MAIN_DB_FILE).closeOnJvmShutdown().make();
-                wordsDB = DBMaker.fileDB(WORDS_DB_FILE).closeOnJvmShutdown().make();
+            if (dbRespConn.isValid(0)) {
+                return dbRespConn;
+            } else {
+                initConnections();
+                return dbRespConn;
             }
-            ConcurrentMap wordMap = wordsDB.hashMap("knownWords").keySerializer(Serializer.STRING).valueSerializer(Serializer.INTEGER).createOrOpen();
-            addOrUpdateParameter(wordMap, word.word);
-            ConcurrentMap map = db.hashMap(word.word).keySerializer(Serializer.STRING).valueSerializer(Serializer.INTEGER).createOrOpen();
-            if (word.isFirst) {
-                addOrUpdateParameter(map, ISFIRSTWORD);
-                ConcurrentMap mapFW = wordsDB.hashMap("firstWordsMap").keySerializer(Serializer.STRING).valueSerializer(Serializer.INTEGER).createOrOpen();
-                addOrUpdateParameter(mapFW, word.word);
-                if (!keepDBOpen) {
-                    wordsDB.commit();
-                    wordsDB.close();
+        } catch (SQLException ex) {
+            logError("Dictionary: An error occurred while checking if dbRespConn was valid: " + ex.getMessage());
+            initConnections();
+            return dbRespConn;
+        }
+    }
+
+    /**
+     * Creates a table in the DB for the given word if it doesn't exist already.
+     */
+    private static void createTableForWord(String word, Connection conn) {
+        try {
+            Statement st = conn.createStatement();
+            st.execute("CREATE TABLE IF NOT EXISTS " + word + "(word VARCHAR(30), prev1 INT, prev2 INT, prev3 INT, prev4 INT, prev5 INT, prev6 INT, prev7 INT, prev8 INT, prev9 INT, next1 INT, next2 INT, next3 INT, next4 INT, next5 INT, next6 INT, next7 INT, next8 INT, next9 INT, first BIT, last BIT);");
+        } catch (SQLException ex) {
+            if (!ex.getMessage().contains("Syntax")) {
+                logError("Dictionary: Error while creating a table: " + ex.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Storages all new info from the given phrase
+     * 
+     * @param phrase: A String containing the phrase to be storaged.
+     */
+    public static void learnNewPhrase(String phrase) {
+        ArrayList<String> preparedPhrase = new ArrayList<>();
+        String[] divided = phrase.split(" ");
+        preparedPhrase.addAll(Arrays.asList(divided));
+        learnNewPhrase(preparedPhrase);
+    }
+
+    /**
+     * Storages all new info from the given phrase
+     * 
+     * @param phrase: An ArrayList containing the phrase to be storaged.
+     */
+    public static void learnNewPhrase(ArrayList<String> phrase) {
+        dbConn = getDBConnection();
+        for (String word : phrase) {
+            if (!word.isEmpty() && !word.equals("") && !word.equals("all") && !word.contains(" ")) {
+                createTableForWord(word, dbConn);
+                try {
+                    addInfo(word, phrase, dbConn);
+                } catch (SQLException ex) {
+                    if (!ex.getMessage().contains("Syntax")) {
+                        logError("Dictionary: An error occured while learning a new phrase: " + ex.getMessage());
+                    }
                 }
+            }
+        }
+    }
+
+    /**
+     * For an already existing table associated to a word, storage all contextual info related to that word in the given phrase.
+     * 
+     * @param word: The word on which's table the info is going to be storaged.
+     * @param phrase: The phrase from which the word came out.
+     * @param conn: The connection to the database.
+     */
+    private static void addInfo(String word, ArrayList<String> phrase, Connection conn) throws SQLException {
+        int wordIndex = phrase.indexOf(word);
+        int size = phrase.size();
+        int columnId = 1;
+        String column = "prev" + columnId;
+        Statement st = conn.createStatement();
+        for (int x = wordIndex - 1; x >= 0; x--) {
+            if (columnId <= 9) {
+                ResultSet result = st.executeQuery("SELECT * FROM " + word + " WHERE word='" + phrase.get(x).toLowerCase() + "';");
+                if (!result.isBeforeFirst()) {
+                    st.execute("INSERT INTO " + word + "(word, prev1, prev2, prev3, prev4, prev5, prev6, prev7, prev8, prev9, next1, next2, next3, next4, next5, next6, next7, next8, next9, first, last) VALUES('" + phrase.get(x).toLowerCase() + "', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);");
+                }
+                st.execute("UPDATE " + word + " SET " + column + "=" + column + "+1 WHERE word='" + phrase.get(x).toLowerCase() + "';");
+                columnId++;
+                column = "prev" + columnId;
+            }
+        }
+        columnId = 1;
+        column = "next" + columnId;
+        for (int x = wordIndex + 1; x < size; x++) {
+            if (columnId <= 9) {
+                ResultSet result = st.executeQuery("SELECT * FROM " + word + " WHERE word='" + phrase.get(x).toLowerCase() + "';");
+                if (!result.isBeforeFirst()) {
+                    st.execute("INSERT INTO " + word + "(word, prev1, prev2, prev3, prev4, prev5, prev6, prev7, prev8, prev9, next1, next2, next3, next4, next5, next6, next7, next8, next9, first, last) VALUES('" + phrase.get(x).toLowerCase() + "', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);");
+                }
+                st.execute("UPDATE " + word + " SET " + column + "=" + column + "+1 WHERE word='" + phrase.get(x).toLowerCase() + "';");
+                columnId++;
+                column = "next" + columnId;
+            }
+        }
+        boolean isFirst = phrase.indexOf(word) == 0;
+        boolean isLast = phrase.indexOf(word) == phrase.size() - 1;
+        if (isFirst || isLast) {
+            ResultSet result = st.executeQuery("SELECT * FROM " + word + " WHERE word='" + word.toLowerCase() + "';");
+            if (!result.isBeforeFirst()) {
+                st.execute("INSERT INTO " + word + "(word, prev1, prev2, prev3, prev4, prev5, prev6, prev7, prev8, prev9, next1, next2, next3, next4, next5, next6, next7, next8, next9, first, last) VALUES('" + word.toLowerCase() + "', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);");
+            }
+            if (isFirst) {
+                st.execute("UPDATE " + word + " SET first=1 WHERE word='" + word.toLowerCase() + "';");
             } else {
-                ConcurrentMap mapPrev = db.hashMap(word.word + "prev").keySerializer(Serializer.STRING).valueSerializer(Serializer.INTEGER).createOrOpen();
-                addOrUpdateParameter(mapPrev, word.prevWord);
-            }
-            if (word.isLast) {
-                addOrUpdateParameter(map, ISLASTWORD);
-            }
-            if (!keepDBOpen) {
-                db.commit();
-                db.close();
+                st.execute("UPDATE " + word + " SET last=1 WHERE word='" + word.toLowerCase() + "';");
             }
         }
     }
 
-    /*** Adds the response to the given question to the database
-     * @param question: The question to link the response to. This should be the last phrase given by ALLAI
-     * @param response: The response given by the user to the last phrase ALLAI said. ***/
-    public static void addAsResponse(String question, String response) {
-        if (!keepDBOpen) {
-            responsesDB = DBMaker.fileDB(RESPONSES_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().make();
-            responsesDB.getStore().fileLoad();
-        }
-        ConcurrentMap responseMap = responsesDB.hashMap(question).keySerializer(Serializer.STRING).valueSerializer(Serializer.INTEGER).createOrOpen();
-        addOrUpdateParameter(responseMap, response);
-        if (!keepDBOpen) {
-            responsesDB.commit();
-            responsesDB.close();
-        }
-    }
-
-    /*** @return A default response for the given question***/
-    public static String getResponse(String question) {
-        if (!keepDBOpen) {
-            responsesDB = DBMaker.fileDB(RESPONSES_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().make();
-            responsesDB.getStore().fileLoad();
-        }
-        ConcurrentMap responseMap = responsesDB.hashMap(question).keySerializer(Serializer.STRING).valueSerializer(Serializer.INTEGER).createOrOpen();
-        Set<String> optionsSet = (Set<String>) responseMap.keySet();
-        String[] optionsArray = optionsSet.stream().toArray(String[]::new);
-        if (!keepDBOpen) {
-            responsesDB.commit();
-            responsesDB.close();
-        }
-        if (optionsArray.length <= 0) {
-            return "";
-        } else {
-            int randomNum = ThreadLocalRandom.current().nextInt(0, optionsArray.length);
-            return optionsArray[randomNum];
-        }
-    }
-
-    /*** @return A String array of all words that have been used at least once as first word in a phrase***/
-    private static String[] getFirstWords() {
-        if (!keepDBOpen) {
-            wordsDB = DBMaker.fileDB(WORDS_DB_FILE).closeOnJvmShutdown().make();
-        }
-        ConcurrentMap mapFW = wordsDB.hashMap("firstWordsMap").keySerializer(Serializer.STRING).valueSerializer(Serializer.INTEGER).createOrOpen();
-        Set<String> optionsSet = (Set<String>) mapFW.keySet();
-        String[] optionsArray = optionsSet.stream().toArray(String[]::new);
-        if (!keepDBOpen) {
-            wordsDB.close();
-        }
-        return optionsArray;
-    }
-
-    /*** @return A random word from the list of possible first words for a phrase.***/
-    public static String getRandomFirstWord() {
-        String[] optionsArray = getFirstWords();
-        int randomNum = ThreadLocalRandom.current().nextInt(0, optionsArray.length);
-        return optionsArray[randomNum];
-    }
-
-    /*** @return A possible next word for the given word to construct a phrase.
-     * In case there is no possible next word, or the word is the end of a
-     * phrase, returns "".***/
-    public static String getNextWord(String word) {
-        word = word.toLowerCase();
-        if (!keepDBOpen) {
-            db = DBMaker.fileDB(MAIN_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().make();
-            db.getStore().fileLoad();
-        }
-        ConcurrentMap map = db.hashMap(word).keySerializer(Serializer.STRING).valueSerializer(Serializer.INTEGER).createOrOpen();
-        Set<String> optionsSet = (Set<String>) map.keySet();
-        Collection<Integer> values = map.values();
-        String[] optionsArray = optionsSet.stream().toArray(String[]::new);
-        int[] valuesArray = values.stream().mapToInt(i -> i).toArray();
-        if (optionsArray.length <= 0) {
-            return "";
-        }
-        int position = getGoodValue(optionsArray, valuesArray);
-        boolean last = false;
-        if (map.get(ISLASTWORD) != null && (int) map.get(ISLASTWORD) > (int) map.get(optionsArray[position])) {
-            last = true;
-        }
-        if (optionsArray[position].equals(ISFIRSTWORD)) {
-            last = true;
-        }
-        if (!keepDBOpen) {
-            db.close();
-        }
-        if (optionsArray.length > 0 && !last) {
-            return !optionsArray[position].equals(ISLASTWORD) ? optionsArray[position] : "";
-        } else {
-            return "";
-        }
-    }
-
-    /*** @return A possible previous word for the given word to construct a
-     * phrase. In case there is no possible previous word, or the word is the
-     * begginning of a phrase, returns "".***/
-    public static String getPreviousWord(String word) {
-        return getNextWord(word + "prev");
-    }
-
-    /*** @return Selected randomly, one of the four best matches for a next word ***/
-    private static int getGoodValue(String[] optionsArray, int[] valuesArray) {
-        int[] bestFour = {0, 0, 0, 0};
-        int temp;
-        for (int x = 0; x < valuesArray.length; x++) {
-            if (valuesArray[x] > bestFour[3]) {
-                bestFour[3] = valuesArray[x];
-            }
-            if (bestFour[3] > bestFour[2]) {
-                temp = bestFour[2];
-                bestFour[2] = bestFour[3];
-                bestFour[3] = temp;
-            }
-            if (bestFour[2] > bestFour[1]) {
-                temp = bestFour[1];
-                bestFour[1] = bestFour[2];
-                bestFour[2] = temp;
-            }
-            if (bestFour[1] > bestFour[0]) {
-                temp = bestFour[0];
-                bestFour[0] = bestFour[1];
-                bestFour[1] = temp;
-            }
-        }
-        int randomNum = ThreadLocalRandom.current().nextInt(0, bestFour.length);
-        int pos = findPosition(bestFour[randomNum], valuesArray);
-        int count = 0; //To prevent infinite stalling if ISFIRSTWORD is the only option
-        while (optionsArray[pos].equals("ISFIRSTWORD") && count < 3) {
-            randomNum = ThreadLocalRandom.current().nextInt(0, bestFour.length);
-            pos = findPosition(bestFour[randomNum], valuesArray);
-            count++;
-        }
-        return pos;
-    }
-
-    /*** @return The position of the given number among the given array of values.
-     * @param number: The number to look for among the array of values
-     * @param values: An array of integers, possibly containing the desired number***/
-    private static int findPosition(int number, int[] values) {
-        int pos = 0;
-        while (pos < values.length) {
-            if (values[pos] == number) {
-                break;
-            } else {
-                pos++;
-            }
-        }
-        return pos < values.length ? pos : 0;
-    }
-
-    /*** @return True if the word can be used as a first word according to the database. False otherwise. ***/
-    public static boolean isAFirstWord(String word) {
-        boolean isFirst = false;
-        String[] options = getFirstWords();
-        for (int x = 0; x < options.length; x++) {
-            if (word.equals(options[x])) {
-                isFirst = true;
-            }
-        }
-        return isFirst;
-    }
-
-    /*** Add a new default question-response pair to the database.
-     * @param question: The question or sentence received from the user.
-     * @param response: The default response ALLAI should answer to the given question.***/
-    public static void loadDefaultResponse(String question, String response) {
-        if (!keepDBOpen) {
-            responsesDB = DBMaker.fileDB(RESPONSES_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().make();
-            responsesDB.getStore().fileLoad();
-        }
-        ConcurrentMap responseMap = responsesDB.hashMap("defaultResponses").keySerializer(Serializer.STRING).valueSerializer(Serializer.STRING).createOrOpen();
+    /**
+     * Returns a random word from the data base.
+     * 
+     * @return A random word.
+     */
+    public static String getRandomWord() {
+        String randomWord = "";
         try {
-            if (responseMap.get(question) == null) {
-                responseMap.put(question, response);
-            }
-        } catch (Exception e) {
-            logError("Dictionary: Exception at addOrUpdateParameter. Word received: " + response + ". " + e.getMessage());
+            dbConn = getDBConnection();
+            Statement st = dbConn.createStatement();
+            ResultSet result = st.executeQuery("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC' ORDER BY RAND() LIMIT 1;");
+            result.next();
+            randomWord = result.getString("TABLE_NAME");
+        } catch (SQLException ex) {
+            logError("Dictionary: An error occured while retrieving a random word: " + ex.getMessage());
         }
-        if (!keepDBOpen) {
-            responsesDB.commit();
-            responsesDB.close();
-        }
+        return randomWord;
     }
 
-    /*** Get a default answer for the given phrase or question
-     * @param phrase: The entire question or sentence received from the user.
-     * @return A default response for the given phrase, if any, or "" otherwise.***/
-    public static String getDefaultAnswer(String phrase) {
-        ArrayList<String> responses = new ArrayList<>();
-        if (!keepDBOpen) {
-            responsesDB = DBMaker.fileDB(RESPONSES_DB_FILE).closeOnJvmShutdown().fileMmapEnableIfSupported().fileMmapPreclearDisable().make();
-            responsesDB.getStore().fileLoad();
+    /**
+     * Analyzing the word's table info, retrieve the next or previous numberOfWords words, with sintactic sense between them.
+     * 
+     * @param prev: Determines if this method returns next words or previous words.
+     */
+    private static String getNextWords(Statement st, String word, int numberOfWords, boolean prev) throws SQLException {
+        String constructed = "";
+        String lastOption = word;
+        String possibleAnswer = "";
+        int x = 1;
+        if (isLastWord(st, word, prev)){
+            possibleAnswer = word;
         }
-        ConcurrentMap responseMap = responsesDB.hashMap("defaultResponses").keySerializer(Serializer.STRING).valueSerializer(Serializer.STRING).createOrOpen();
-        Set<String> questionsSet = (Set<String>) responseMap.keySet();
-        String[] questions = questionsSet.stream().toArray(String[]::new);
-        for (int x = 0; x < questions.length; x++) {
-            if (phrase.contains(questions[x])) {
-                responses.add((String) responseMap.get(questions[x]));
+        while (x <= numberOfWords) {
+            int count = 0;
+            String option = getNextWordOfIndex(st, word, x, prev, count);
+            boolean possible = false;
+            count++;
+            while (!possible && count < 50 && !option.equals("NO_NEXT")) {
+                possible = isANextWord(st, lastOption, option, prev);
+                if (!possible) {
+                    option = getNextWordOfIndex(st, word, x, prev, count);
+                }
+                count++;
+            }
+            if (!possible) {
+                break;
+            }
+            if (option.equals("NO_NEXT")) {
+                break;
+            }
+            lastOption = option;
+            constructed += option + " ";
+            if (isLastWord(st, option, prev)){
+                possibleAnswer = constructed;
+            }
+            x++;
+        }
+        String response = possibleAnswer.equals("") ? constructed : possibleAnswer;
+        if (response.endsWith(" ")) {
+            response = response.substring(0, response.length() - 1);;
+        }
+        return response;
+    }
+
+    private static String getNextWordOfIndex(Statement st, String word, int index, boolean prev, int count) throws SQLException {
+        String column = null;
+        if (prev) {
+            column = "prev";
+        } else {
+            column = "next";
+        }
+        if (index > 9) {
+            return "NO_NEXT";
+        }
+        int limit = count + 1;
+        ResultSet result;
+        try {
+            result = st.executeQuery("SELECT WORD FROM " + word + " WHERE " + column + index + ">0 ORDER BY " + column + index + " DESC LIMIT " + limit + ";");
+        } catch (Exception e) {
+            return "NO_NEXT";
+        }
+        int x = 0;
+        while (x < limit) {
+            if (!result.next()) {
+                return "NO_NEXT";
+            }
+            x++;
+        }
+        return result.getString("WORD");
+    }
+
+    private static boolean isANextWord(Statement st, String prevWord, String nextWord, boolean prev) throws SQLException {
+        String column;
+        if (prev) {
+            column = "prev";
+        } else {
+            column = "next";
+        }
+        boolean isNext = false;
+        ResultSet result = st.executeQuery("SELECT WORD FROM " + prevWord + " WHERE " + column + "1>0;");
+        while (result.next()) {
+            String tested = result.getString("WORD");
+            if (tested.equals(nextWord)) {
+                isNext = true;
             }
         }
-        if (!keepDBOpen) {
-            responsesDB.commit();
-            responsesDB.close();
-        }
-        if (responses.size() > 0) {
-            int randomNum = ThreadLocalRandom.current().nextInt(0, responses.size());
-            return responses.get(randomNum);
+        return isNext;
+    }
+
+    private static boolean isLastWord(Statement st, String option, boolean prev) throws SQLException {
+        String column;
+        if (prev) {
+            column = "first";
         } else {
-            return "";
+            column = "last";
+        }
+        String vetoedLastWords = "de en y a que con los la el las con mientras";
+        boolean isLast = false;
+        if (vetoedLastWords.contains(option) && !prev) {
+            return false;
+        }
+        ResultSet result;
+        try {
+            result = st.executeQuery("SELECT " + column + " FROM " + option + " WHERE WORD='" + option.toLowerCase() + "';");
+        } catch (Exception e) {
+            return false;
+        }
+        if (!result.next()) {
+            return false;
+        }
+        isLast = result.getBoolean(column);
+        return isLast;
+    }
+
+    private static String getPrevWords(Statement st, String rootWord, int i) throws SQLException {
+        String prevWords = getNextWords(st, rootWord, i, true);
+        String[] words = prevWords.split(" ");
+        String output = "";
+        for (int x = words.length - 1; x >= 0; x--) {
+            output += words[x] + " ";
+        }
+        return output;
+    }
+
+    private static String getNextWords(Statement st, String rootWord, int i) throws SQLException {
+        return getNextWords(st, rootWord, i, false);
+    }
+
+    /**
+     * Generate a phrase using the given word as root.
+     * 
+     * @param rootWord: Root or seed from where to generate a phrase.
+     * @return A phrase using the given word.
+     */
+    public static String getPhraseWithRootWord(String rootWord) {
+        String firstHalf = "";
+        String secondHalf = "";
+        try {
+            dbConn = getDBConnection();
+            Statement st = dbConn.createStatement();
+            secondHalf = rootWord + " " + getNextWords(st, rootWord, 9);
+            firstHalf = getPrevWords(st, rootWord, 9);
+        } catch (SQLException ex) {
+            Logger.getLogger(Dictionary.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return firstHalf + secondHalf.toLowerCase();
+    }
+
+    /**
+     * Add a response to the given question in the database.
+     * 
+     * @param question: The phrase to be answered.
+     * @param response: The response to the question.
+     */
+    public static void addResponse(String question, String response) {
+        try {
+            dbRespConn = getDBRespConnection();
+            Statement st = dbRespConn.createStatement();
+            createTableForResponse(question, st);
+            ResultSet result = st.executeQuery("SELECT * FROM " + question + " WHERE response='" + response.toLowerCase() + "';");
+            if (!result.isBeforeFirst()) {
+                st.execute("INSERT INTO " + question + "(response, count) VALUES('" + response.toLowerCase() + "', 0);");
+            }
+            st.execute("UPDATE " + question + " SET count=count+1 WHERE response='" + response.toLowerCase() + "';");
+        } catch (SQLException ex) {}
+    }
+
+    /**
+     * Consults the responses data base and returns a response, if any, to the given question.
+     * 
+     * @param question: The word to respond to.
+     * @return A response to the question, if any.
+     */
+    public static String getResponse(String question) {
+        String output = "";
+        try {
+            dbRespConn = getDBRespConnection();
+            Statement st = dbRespConn.createStatement();
+            ResultSet result;
+            try {
+                result = st.executeQuery("SELECT RESPONSE FROM " + question + " ORDER BY COUNT DESC;");
+            } catch (SQLException ex) {
+                return output;
+            }
+            if (!result.next()) {
+                output = "";
+            } else {
+                output = result.getString("RESPONSE");
+                Random r = new Random();
+                int prob = r.nextInt(101);
+                while (prob > 50) {
+                    prob = r.nextInt(101);
+                    try {
+                        result.next();
+                        output = result.getString("RESPONSE");
+                    } catch (SQLException ex) {
+                        break;
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            logError("Dictionary: Error while getting a response: " + ex.getMessage());
+        }
+        return output;
+    }
+
+    private static void createTableForResponse(String word, Statement st) {
+        try {
+            st.execute("CREATE TABLE IF NOT EXISTS " + word + "(response VARCHAR(50), count INT);");
+        } catch (SQLException ex) {
+            if (!ex.getMessage().contains("Syntax")) {
+                logError("Dictionary: Error while creating a response table: " + ex.getMessage());
+            }
         }
     }
 }

@@ -5,23 +5,20 @@
  */
 package allai.utils;
 
+import static allai.utils.ALLAILogger.logError;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Daniel Alejandro Hurtado Simoes
  * Universidad de Málaga
  * TFG - Grado en Ingeniería Telemática
  */
-public class FileManager {
+public class FileManager_old {
 
     public static BufferedReader readFromFile(String filename) {
         BufferedReader output = null;
@@ -29,10 +26,10 @@ public class FileManager {
             try {
                 output = new BufferedReader(new InputStreamReader(new FileInputStream(filename), "UTF-8"));
             } catch (UnsupportedEncodingException ex) {
-                Logger.getLogger(FileManager.class.getName()).log(Level.SEVERE, null, ex);
+                logError("FileManager: Unsupported encoding (not going to happen ever...)");
             }
         } catch (FileNotFoundException e) {
-            System.out.println("FileManager: ERROR, File not found: " + e.getMessage());
+            logError("FileManager: ERROR, File not found: " + e.getMessage());
         }
         return output;
     }
@@ -44,7 +41,7 @@ public class FileManager {
             writer.println(content);
             writer.close();
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
-            System.out.println("FileManager: An error occured while writing a file: " + ex.getMessage());
+            logError("FileManager: An error occured while writing a file: " + ex.getMessage());
         }
     }
 
