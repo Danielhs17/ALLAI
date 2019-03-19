@@ -6,8 +6,12 @@
 package allai.main.utils;
 
 import allai.main.Dictionary;
+import static allai.utils.ALLAILogger.logError;
 import allai.utils.FileManager;
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Daniel Alejandro Hurtado Simoes
@@ -19,6 +23,7 @@ public class DefaultResponsesLoader {
     private String responses = "files\\responses.txt";
     private BufferedReader questionsReader;
     private BufferedReader responsesReader;
+    
     public void createResponsesDB(){
         String question;
         String response;
@@ -33,9 +38,37 @@ public class DefaultResponsesLoader {
                 question = questionsReader.readLine();
             }
         } catch (Exception e){
-            //logError("DefaultResponsesLoader: An error occured while trying to load the default responses: " + e.getMessage());
-            System.out.println("ERROR CARGANDO LAS RESPUESTAS POR DEFECTO");
-            e.printStackTrace();
+            logError("DefaultResponsesLoader: An error occured while trying to load the default responses: " + e.getMessage());
         }
+    }
+    
+    public String getDefaultQuestion(String phrase){
+        String output = "";
+        phrase = removeAccents(phrase.replaceAll(" ", "_"));
+        try {
+            String question;
+            questionsReader = FileManager.readFromFile(questions);
+            question = questionsReader.readLine();
+            while (question != null){
+                if (phrase.contains(question)){
+                    output = question;
+                    break;
+                }
+                question = questionsReader.readLine();
+            }
+        } catch (IOException ex) {
+            logError("DefaultResponsesLoader: An error occured while getting a default question: " + ex.getMessage());
+        }
+        return output;
+    }
+    
+    private String removeAccents(String texto) {
+        String original = "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýÿ";
+        String ascii = "AAAAAAACEEEEIIIIDNOOOOOOUUUUYBaaaaaaaceeeeiiiionoooooouuuuyy";
+        String output = texto;
+        for (int i = 0; i < original.length(); i++) {
+            output = output.replace(original.charAt(i), ascii.charAt(i));
+        }
+        return output;
     }
 }

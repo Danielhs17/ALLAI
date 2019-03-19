@@ -5,6 +5,7 @@
  */
 package allai.main;
 
+import allai.main.utils.DefaultResponsesLoader;
 import allai.main.utils.SpanishImportantWords;
 import static allai.utils.ALLAILogger.logInfo;
 import allai.utils.BookReader;
@@ -86,7 +87,13 @@ public class LanguageAnalyzer {
      */
     public String getResponse(String phrase) {
         phrase = deleteSpecialChars(phrase);
-        String phraseRootWord = SpanishImportantWords.getMostImportantWord(phrase);
+        String defaultResponse = new DefaultResponsesLoader().getDefaultQuestion(phrase);
+        String phraseRootWord = "";
+        if (!defaultResponse.equals("")){
+            phraseRootWord = defaultResponse;
+        }else{
+            phraseRootWord = SpanishImportantWords.getMostImportantWord(phrase);
+        }
         logInfo("LanguageAnalyzer " + threadId + ": Most important word: " + phraseRootWord);
         String rootWord = Dictionary.getResponse(phraseRootWord);
         if (rootWord.equals("")) {

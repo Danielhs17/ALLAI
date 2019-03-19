@@ -20,23 +20,35 @@ import java.util.logging.Logger;
 import org.h2.tools.Server;
 
 /**
- * @author Daniel Alejandro Hurtado Simoes
- * Universidad de Málaga
- * TFG - Grado en Ingeniería Telemática
+ * @author Daniel Alejandro Hurtado Simoes Universidad de Málaga TFG - Grado en
+ * Ingeniería Telemática
  */
 public class Dictionary {
 
+    private static String OS = System.getProperty("os.name").toLowerCase();
+//    private static String urlJDBC = "jdbc:h2:tcp://localhost/C:/Users/dahs/Documents/NetBeansProjects/ALLAI 2/db/ALLAI";
+//    private static String urlJDBCresponses = "jdbc:h2:tcp://localhost/C:/Users/dahs/Documents/NetBeansProjects/ALLAI 2/db/ALLAIresponses";
     private static String urlJDBC = "jdbc:h2:tcp://localhost/~/ALLAI/db/ALLAI";
     private static String urlJDBCresponses = "jdbc:h2:tcp://localhost/~/ALLAI/db/ALLAIresponses";
 
     private static Connection dbConn;
     private static Connection dbRespConn;
     private static Server server;
+    
+    private static String vetoedLastWords = "de en y a que con los la el las con mientras";
+
+    public static boolean isWindows() {
+        return (OS.indexOf("win") >= 0);
+    }
 
     /**
      * * Starts H2 server and initializes DB Connections.
      */
     public static void start() {
+        if (isWindows()){
+            urlJDBC = "jdbc:h2:tcp://localhost/C:/Users/dahs/Documents/NetBeansProjects/ALLAI 2/db/ALLAI";
+            urlJDBCresponses = "jdbc:h2:tcp://localhost/C:/Users/dahs/Documents/NetBeansProjects/ALLAI 2/db/ALLAIresponses";
+        }
         startServer();
         initConnections();
     }
@@ -95,8 +107,9 @@ public class Dictionary {
     }
 
     /**
-     * * Checks if the connection is still active. If it is, it returns it. If not, it initializes it and returns it.
-     * 
+     * * Checks if the connection is still active. If it is, it returns it. If
+     * not, it initializes it and returns it.
+     *
      * @return: A valid dbConn connection.
      */
     private static Connection getDBConnection() {
@@ -115,8 +128,9 @@ public class Dictionary {
     }
 
     /**
-     * * Checks if the connection is still active. If it is, it returns it. If not, it initializes it and returns it.
-     * 
+     * * Checks if the connection is still active. If it is, it returns it. If
+     * not, it initializes it and returns it.
+     *
      * @return: A valid dbRespConn connection.
      */
     private static Connection getDBRespConnection() {
@@ -150,7 +164,7 @@ public class Dictionary {
 
     /**
      * Storages all new info from the given phrase
-     * 
+     *
      * @param phrase: A String containing the phrase to be storaged.
      */
     public static void learnNewPhrase(String phrase) {
@@ -162,7 +176,7 @@ public class Dictionary {
 
     /**
      * Storages all new info from the given phrase
-     * 
+     *
      * @param phrase: An ArrayList containing the phrase to be storaged.
      */
     public static void learnNewPhrase(ArrayList<String> phrase) {
@@ -182,8 +196,9 @@ public class Dictionary {
     }
 
     /**
-     * For an already existing table associated to a word, storage all contextual info related to that word in the given phrase.
-     * 
+     * For an already existing table associated to a word, storage all
+     * contextual info related to that word in the given phrase.
+     *
      * @param word: The word on which's table the info is going to be storaged.
      * @param phrase: The phrase from which the word came out.
      * @param conn: The connection to the database.
@@ -235,7 +250,7 @@ public class Dictionary {
 
     /**
      * Returns a random word from the data base.
-     * 
+     *
      * @return A random word.
      */
     public static String getRandomWord() {
@@ -253,16 +268,18 @@ public class Dictionary {
     }
 
     /**
-     * Analyzing the word's table info, retrieve the next or previous numberOfWords words, with sintactic sense between them.
-     * 
-     * @param prev: Determines if this method returns next words or previous words.
+     * Analyzing the word's table info, retrieve the next or previous
+     * numberOfWords words, with sintactic sense between them.
+     *
+     * @param prev: Determines if this method returns next words or previous
+     * words.
      */
     private static String getNextWords(Statement st, String word, int numberOfWords, boolean prev) throws SQLException {
         String constructed = "";
         String lastOption = word;
         String possibleAnswer = "";
         int x = 1;
-        if (isLastWord(st, word, prev)){
+        if (isLastWord(st, word, prev)) {
             possibleAnswer = word;
         }
         while (x <= numberOfWords) {
@@ -271,7 +288,7 @@ public class Dictionary {
             boolean possible = false;
             count++;
             while (!possible && count < 50 && !option.equals("NO_NEXT")) {
-                possible = isANextWord(st, lastOption, option, prev);
+                possible = isANextWord(st, lastOption, option, prev) && !option.equals(lastOption);
                 if (!possible) {
                     option = getNextWordOfIndex(st, word, x, prev, count);
                 }
@@ -285,12 +302,15 @@ public class Dictionary {
             }
             lastOption = option;
             constructed += option + " ";
-            if (isLastWord(st, option, prev)){
+            if (isLastWord(st, option, prev)) {
                 possibleAnswer = constructed;
             }
             x++;
         }
         String response = possibleAnswer.equals("") ? constructed : possibleAnswer;
+        if (endsWithVetoedLastWord(response)){
+            response = removeLastWord(response);
+        }
         if (response.endsWith(" ")) {
             response = response.substring(0, response.length() - 1);;
         }
@@ -349,7 +369,7 @@ public class Dictionary {
         } else {
             column = "last";
         }
-        String vetoedLastWords = "de en y a que con los la el las con mientras";
+        
         boolean isLast = false;
         if (vetoedLastWords.contains(option) && !prev) {
             return false;
@@ -383,7 +403,7 @@ public class Dictionary {
 
     /**
      * Generate a phrase using the given word as root.
-     * 
+     *
      * @param rootWord: Root or seed from where to generate a phrase.
      * @return A phrase using the given word.
      */
@@ -403,7 +423,7 @@ public class Dictionary {
 
     /**
      * Add a response to the given question in the database.
-     * 
+     *
      * @param question: The phrase to be answered.
      * @param response: The response to the question.
      */
@@ -417,12 +437,14 @@ public class Dictionary {
                 st.execute("INSERT INTO " + question + "(response, count) VALUES('" + response.toLowerCase() + "', 0);");
             }
             st.execute("UPDATE " + question + " SET count=count+1 WHERE response='" + response.toLowerCase() + "';");
-        } catch (SQLException ex) {}
+        } catch (SQLException ex) {
+        }
     }
 
     /**
-     * Consults the responses data base and returns a response, if any, to the given question.
-     * 
+     * Consults the responses data base and returns a response, if any, to the
+     * given question.
+     *
      * @param question: The word to respond to.
      * @return A response to the question, if any.
      */
@@ -468,4 +490,20 @@ public class Dictionary {
             }
         }
     }
+
+    private static boolean endsWithVetoedLastWord(String response) {
+        String[] split = response.split(" ");
+        String lastWord = split[split.length-1];
+        return vetoedLastWords.contains(lastWord);
+    }
+
+    private static String removeLastWord(String response) {
+        String[] split = response.split(" ");
+        String output = "";
+        for (int x=0; x<split.length-1; x++){
+            output += split[x] + " ";
+        }
+        return output;
+    }
+
 }
