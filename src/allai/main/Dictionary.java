@@ -45,8 +45,8 @@ public class Dictionary {
      * * Stops H2 server and closes DB Connections.
      */
     public static void stop() {
-        stopServer();
         closeConnections();
+        stopServer();
     }
 
     /**
