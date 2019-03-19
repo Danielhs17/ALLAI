@@ -34,7 +34,7 @@ public class Dictionary {
     private static Connection dbConn;
     private static Connection dbRespConn;
     private static Server server;
-    
+
     private static String vetoedLastWords = "de en y a que con los la el las con mientras";
 
     public static boolean isWindows() {
@@ -45,7 +45,7 @@ public class Dictionary {
      * * Starts H2 server and initializes DB Connections.
      */
     public static void start() {
-        if (isWindows()){
+        if (isWindows()) {
             urlJDBC = "jdbc:h2:tcp://localhost/C:/Users/dahs/Documents/NetBeansProjects/ALLAI 2/db/ALLAI";
             urlJDBCresponses = "jdbc:h2:tcp://localhost/C:/Users/dahs/Documents/NetBeansProjects/ALLAI 2/db/ALLAIresponses";
         }
@@ -280,7 +280,7 @@ public class Dictionary {
         String possibleAnswer = "";
         int x = 1;
         if (isLastWord(st, word, prev)) {
-            possibleAnswer = word;
+            possibleAnswer = "";
         }
         while (x <= numberOfWords) {
             int count = 0;
@@ -288,7 +288,7 @@ public class Dictionary {
             boolean possible = false;
             count++;
             while (!possible && count < 50 && !option.equals("NO_NEXT")) {
-                possible = isANextWord(st, lastOption, option, prev) && !option.equals(lastOption);
+                possible = isANextWord(st, lastOption, option, prev);
                 if (!possible) {
                     option = getNextWordOfIndex(st, word, x, prev, count);
                 }
@@ -300,15 +300,15 @@ public class Dictionary {
             if (option.equals("NO_NEXT")) {
                 break;
             }
-            lastOption = option;
             constructed += option + " ";
+            lastOption = option;
             if (isLastWord(st, option, prev)) {
                 possibleAnswer = constructed;
             }
             x++;
         }
         String response = possibleAnswer.equals("") ? constructed : possibleAnswer;
-        if (endsWithVetoedLastWord(response)){
+        if (endsWithVetoedLastWord(response)) {
             response = removeLastWord(response);
         }
         if (response.endsWith(" ")) {
@@ -369,7 +369,6 @@ public class Dictionary {
         } else {
             column = "last";
         }
-        
         boolean isLast = false;
         if (vetoedLastWords.contains(option) && !prev) {
             return false;
@@ -493,14 +492,14 @@ public class Dictionary {
 
     private static boolean endsWithVetoedLastWord(String response) {
         String[] split = response.split(" ");
-        String lastWord = split[split.length-1];
+        String lastWord = split[split.length - 1];
         return vetoedLastWords.contains(lastWord);
     }
 
     private static String removeLastWord(String response) {
         String[] split = response.split(" ");
         String output = "";
-        for (int x=0; x<split.length-1; x++){
+        for (int x = 0; x < split.length - 1; x++) {
             output += split[x] + " ";
         }
         return output;

@@ -87,11 +87,13 @@ public class LanguageAnalyzer {
      */
     public String getResponse(String phrase) {
         phrase = deleteSpecialChars(phrase);
-        String defaultResponse = new DefaultResponsesLoader().getDefaultQuestion(phrase);
+        String defaultQuestion = new DefaultResponsesLoader(threadId).getDefaultQuestion(phrase);
         String phraseRootWord = "";
-        if (!defaultResponse.equals("")){
-            phraseRootWord = defaultResponse;
+        if (!defaultQuestion.equals("")){
+            logInfo("LanguageAnalyzer " + threadId + ": Identified as default question.");
+            phraseRootWord = defaultQuestion;
         }else{
+            logInfo("LanguageAnalyzer " + threadId + ": Identified as random phrase.");
             phraseRootWord = SpanishImportantWords.getMostImportantWord(phrase);
         }
         logInfo("LanguageAnalyzer " + threadId + ": Most important word: " + phraseRootWord);
