@@ -9,8 +9,8 @@ First Learning process may take several hours to create the entire database. The
 Besides reading, ALLAI is learning every time it talks with you. Each sentence you send to ALLAI will be analyzed, and the databases will be updated. ALLAI also analyzes the phrase you just answered to, in order to update the possible answers database.
 
 ## Diagrams
-[This diagram is outdated. To be updated soon]
-![Getting a response from ALLAI](../master/classDiagram.jpg)
+The following is a simplified class diagram of the main structure of this project. More info will be added in the future.
+![Simplified Main Structure](../master/classDiagram.png)
 ## Supported Languages:
 Right now ALLAI supports only Spanish, although ALLAI's core is prepared to analyze and learn any phonographic alphabet based language. 
 The reason Spanish is the only currently supported language is that the algorithm recognized the most important words in a phrase in order to create a response, and this is language dependent, as well as the domestic assistance pre-builded responses.
