@@ -161,6 +161,62 @@ public class Dictionary {
             }
         }
     }
+    
+    /**
+     * Creates a table in the DB responses for the last responses if it doesn't exist already.
+     */
+    private static void createTableForLastResponse(Connection conn) {
+        try {
+            Statement st = conn.createStatement();
+            st.execute("CREATE TABLE IF NOT EXISTS LAST_RESPONSE(chatId BIGINT, response VARCHAR(30));");
+        } catch (SQLException ex) {
+            if (!ex.getMessage().contains("Syntax")) {
+                logError("Dictionary: Error while creating a table: " + ex.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Stores the last response ALLAI gave to a given user
+     */
+    public static void storeLastResponse(String response, long chatId){
+        dbRespConn = getDBRespConnection();
+        createTableForLastResponse(dbRespConn);
+        try {
+            Statement st = dbRespConn.createStatement();
+            ResultSet result = st.executeQuery("SELECT * FROM LAST_RESPONSE WHERE chatId=" + chatId + ";");
+                    if (!result.isBeforeFirst()) {
+                        st.execute("INSERT INTO LAST_RESPONSE(chatId, response) VALUES(" + chatId + ", '" + response + "');");
+                    }else{
+                        st.execute("UPDATE LAST_RESPONSE SET response='" + response + "' WHERE chatId=" + chatId + ";");
+                    }
+        } catch (SQLException ex) {
+            logError("Dictionary: An error occured while storing a last response: " + ex.getMessage());
+        }
+    }
+    
+    /**
+     * Returns the last response ALLAI gave to a given user
+     */
+    public static String getLastResponse(long chatId){
+        String output = "";
+        dbRespConn = getDBRespConnection();
+        try {
+            Statement st = dbRespConn.createStatement();
+            try{
+                ResultSet result = st.executeQuery("SELECT response FROM LAST_RESPONSE WHERE chatId=" + chatId + ";");
+                if (result.isBeforeFirst()) {
+                    result.next();
+                    output = result.getString("response");
+                }
+            } catch (SQLException ex) {
+                return output;
+            }
+        } catch (SQLException ex) {
+            logError("Dictionary: An error occured while getting a last response: " + ex.getMessage());
+        }
+        return output;
+    }
 
     /**
      * Storages all new info from the given phrase

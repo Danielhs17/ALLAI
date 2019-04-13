@@ -36,12 +36,12 @@ public class Interpreter {
             String translated = translateCommand(phrase);
             String responded = processor.respondCommand(translated, 0);
             if (responded.startsWith("[X]") && !processor.isARawCommand(phrase)) {
-                return analyzer.getResponse(phrase.toLowerCase());
+                return analyzer.getResponse(phrase.toLowerCase(), 0);
             } else {
                 return responded;
             }
         } else {
-                return analyzer.getResponse(phrase.toLowerCase());
+                return analyzer.getResponse(phrase.toLowerCase(), 0);
         }
     }
     
@@ -55,7 +55,7 @@ public class Interpreter {
             String translated = translateCommand(phrase);
             String responded = processor.respondCommand(translated, chatId);
             if (responded.startsWith("[X]") && !processor.isARawCommand(phrase)) {
-                return analyzer.getResponse(phrase.toLowerCase());
+                return analyzer.getResponse(phrase.toLowerCase(), chatId);
             } else {
                 return responded;
             }
@@ -66,7 +66,7 @@ public class Interpreter {
                 return "";
             } else {
                 logInfo("Interpreter " + threadId + ": QuietMode is OFF, getting response");
-                return analyzer.getResponse(phrase.toLowerCase());
+                return analyzer.getResponse(phrase.toLowerCase(), chatId);
             }
         }
     }

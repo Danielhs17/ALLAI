@@ -12,15 +12,13 @@ import allai.utils.BookReader;
 import java.util.ArrayList;
 
 /**
- * @author Daniel Alejandro Hurtado Simoes
- * Universidad de Málaga
- * TFG - Grado en Ingeniería Telemática
+ * @author Daniel Alejandro Hurtado Simoes Universidad de Málaga TFG - Grado en
+ * Ingeniería Telemática
  */
 public class LanguageAnalyzer {
 
     private static BookReader reader;
     private static String book = "files\\book.txt";
-    private static String lastResponse = "";
     private int threadId = 0;
 
     /**
@@ -31,11 +29,10 @@ public class LanguageAnalyzer {
      * 'otherBook' parameter is set to true.
      * @param otherBook: Set to true to make ALLAI learn a different book than
      * the default one, or set to false otherwise.
-     * @param learnBook: If true, ALLAI will begin the first learn process
-     * (read and store data from the book). This may take several hours. Set to
-     * false for default use (responses and random phrases construction).
-     * @param threadId: The ID for the current thread (for logging purposes).
-    **
+     * @param learnBook: If true, ALLAI will begin the first learn process (read
+     * and store data from the book). This may take several hours. Set to false
+     * for default use (responses and random phrases construction).
+     * @param threadId: The ID for the current thread (for logging purposes). *
      */
     public LanguageAnalyzer(String filename, boolean otherBook, boolean learnBook, int threadId) {
         this.threadId = threadId;
@@ -45,10 +42,12 @@ public class LanguageAnalyzer {
         if (learnBook) {
             reader = new BookReader(book);
         }
-        lastResponse = "";
     }
 
-    /*** Reads, analyzes and storages the default book, or the one given by the user on the constructor. ***/
+    /**
+     * * Reads, analyzes and storages the default book, or the one given by the
+     * user on the constructor. **
+     */
     public void learnBook() {
         System.out.println("LanguageAnalyzer: [FIRST LEARNING INITIATED]");
         int count = 0;
@@ -85,14 +84,14 @@ public class LanguageAnalyzer {
      * to.
      * @return A response for the given phrase **
      */
-    public String getResponse(String phrase) {
+    public String getResponse(String phrase, long chatId) {
         phrase = deleteSpecialChars(phrase);
         String defaultQuestion = new DefaultResponsesLoader(threadId).getDefaultQuestion(phrase);
         String phraseRootWord = "";
-        if (!defaultQuestion.equals("")){
+        if (!defaultQuestion.equals("")) {
             logInfo("LanguageAnalyzer " + threadId + ": Identified as default question.");
             phraseRootWord = defaultQuestion;
-        }else{
+        } else {
             logInfo("LanguageAnalyzer " + threadId + ": Identified as random phrase.");
             phraseRootWord = SpanishImportantWords.getMostImportantWord(phrase);
         }
@@ -110,17 +109,19 @@ public class LanguageAnalyzer {
         } else {
             logInfo("LanguageAnalyzer " + threadId + ": Retrieving phrase with root word: " + rootWord);
             response = Dictionary.getPhraseWithRootWord(rootWord);
-            if (deleteGhostSpaces(response).toLowerCase().equals(deleteGhostSpaces(phraseRootWord.toLowerCase()))){
+            if (deleteGhostSpaces(response).toLowerCase().equals(deleteGhostSpaces(phraseRootWord.toLowerCase()))) {
                 logInfo("LanguageAnalyzer " + threadId + ": Response equal to question, responding random phrase");
                 response = getRandomPhrase();
             }
         }
         Dictionary.learnNewPhrase(phrase);
-        if (!lastResponse.equals("")) {
-            String lastResponseRootWord = SpanishImportantWords.getMostImportantWord(lastResponse);
-            Dictionary.addResponse(lastResponseRootWord, phraseRootWord);
+        if (chatId != 0) {
+            String lastResponse = Dictionary.getLastResponse(chatId);
+            if (!lastResponse.equals("")) {
+                Dictionary.addResponse(lastResponse, phraseRootWord);
+            }
+            Dictionary.storeLastResponse(SpanishImportantWords.getMostImportantWord(response), chatId);
         }
-        lastResponse = deleteGhostSpaces(deleteSpecialChars(response));
         return deleteGhostSpaces(response);
     }
 
@@ -136,7 +137,8 @@ public class LanguageAnalyzer {
     }
 
     /**
-     * * Deletes spaces added to the start and end of a sentence during its generation in the Dictionary.
+     * * Deletes spaces added to the start and end of a sentence during its
+     * generation in the Dictionary.
      *
      * @return The transformed sentence. **
      */
